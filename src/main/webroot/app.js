@@ -3532,6 +3532,7 @@ class ListGroupItem {
         return __WEBPACK_IMPORTED_MODULE_0_mithril___default()('.list-group-item', vnode.attrs, vnode.children);
     }
 }
+
 class NameList {
     view(vnode) {
         return vnode.attrs.names && vnode.attrs.names.length > 0 ?
@@ -3550,8 +3551,8 @@ class NameList {
 class OnlineBadge {
     view(vnode) {
         return vnode.attrs.connected?
-         __WEBPACK_IMPORTED_MODULE_0_mithril___default()('.badge',{style:'background-color:green'},'online'):
-         __WEBPACK_IMPORTED_MODULE_0_mithril___default()('.badge',{style:'background-color:red'},'offline');
+         __WEBPACK_IMPORTED_MODULE_0_mithril___default()('.badge',{style:'background-color:green'}, 'online'):
+         __WEBPACK_IMPORTED_MODULE_0_mithril___default()('.badge',{style:'background-color:red'}, 'offline');
     }
 }
 

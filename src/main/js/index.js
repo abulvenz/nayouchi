@@ -110,6 +110,7 @@ class ListGroupItem {
         return m('.list-group-item', vnode.attrs, vnode.children);
     }
 }
+
 class NameList {
     view(vnode) {
         return vnode.attrs.names && vnode.attrs.names.length > 0 ?
@@ -128,8 +129,8 @@ class NameList {
 class OnlineBadge {
     view(vnode) {
         return vnode.attrs.connected?
-         m('.badge',{style:'background-color:green'},'online'):
-         m('.badge',{style:'background-color:red'},'offline');
+         m('.badge',{style:'background-color:green'}, 'online'):
+         m('.badge',{style:'background-color:red'}, 'offline');
     }
 }
 
