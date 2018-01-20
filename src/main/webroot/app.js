@@ -3449,8 +3449,6 @@ bus.onclose = e => {
   __WEBPACK_IMPORTED_MODULE_0_mithril___default.a.redraw();
 };
 
-
-
 class InputWithEnter {
   inputEvent(vnode) {
     return (e) => {
@@ -3462,6 +3460,7 @@ class InputWithEnter {
       }
     }
   }
+  
   view(vnode) {
     return __WEBPACK_IMPORTED_MODULE_0_mithril___default()('input.form-control', {
       onkeyup: this.inputEvent(vnode)

@@ -31,6 +31,10 @@ public class MainVerticle extends AbstractVerticle {
                 // all outbound messages are permitted
                 .addOutboundPermitted(new PermittedOptions());
 
+        router.get("/usr/:userID/grp/:grpID").handler(ctx -> {
+            ctx.reroute("/");
+        });
+
         router.route("/eventbus/*").handler(SockJSHandler.create(vertx).bridge(options));
 
         vertx.eventBus().consumer("sendName", this::distName);

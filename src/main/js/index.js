@@ -26,8 +26,6 @@ bus.onclose = e => {
   m.redraw();
 };
 
-
-
 class InputWithEnter {
   inputEvent(vnode) {
     return (e) => {
@@ -39,6 +37,7 @@ class InputWithEnter {
       }
     }
   }
+  
   view(vnode) {
     return m('input.form-control', {
       onkeyup: this.inputEvent(vnode)
