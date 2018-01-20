@@ -3420,175 +3420,149 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_mithril___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0_mithril__);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_vertx3_eventbus_client__ = __webpack_require__(37);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_vertx3_eventbus_client___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_1_vertx3_eventbus_client__);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__fn__ = __webpack_require__(70);
+
 
 
 
 let bus = new __WEBPACK_IMPORTED_MODULE_1_vertx3_eventbus_client___default.a(window.location.protocol + '//' + window.location.hostname + ':' + window.location.port + '/eventbus');
-let names = [];
-
 bus.enableReconnect(true);
 
 let connected = false;
 
 bus.onopen = () => {
-    connected = true;
-    console.log('connected');
-    bus.registerHandler('names', (name, ef) => {
-        names.push(ef.body);
-        __WEBPACK_IMPORTED_MODULE_0_mithril___default.a.redraw();
-    });
-    bus.registerHandler('removedName', (err, msg) => {
-        console.log('removedName', msg)
-        let name = msg.body;
-        names = names.filter(n => !(name.name === n.name && name.user === n.user));
-        __WEBPACK_IMPORTED_MODULE_0_mithril___default.a.redraw();
-    });
-    bus.send('fetch', 'doit', (err, result) => {
-        names = result.body;
-        __WEBPACK_IMPORTED_MODULE_0_mithril___default.a.redraw();
-    });
+  connected = true;
+  bus.registerHandler('removedName', (err, msg) => {
+    let name = msg.body;
     __WEBPACK_IMPORTED_MODULE_0_mithril___default.a.redraw();
+  });
+  bus.send('fetch', 'doit', (err, result) => {
+    names = result.body;
+    __WEBPACK_IMPORTED_MODULE_0_mithril___default.a.redraw();
+  });
+  __WEBPACK_IMPORTED_MODULE_0_mithril___default.a.redraw();
 };
 
 bus.onclose = e => {
-    connected = false;
-    console.log('disconnected');
-    __WEBPACK_IMPORTED_MODULE_0_mithril___default.a.redraw();
+  connected = false;
+  console.log('disconnected');
+  __WEBPACK_IMPORTED_MODULE_0_mithril___default.a.redraw();
 };
 
-let username = localStorage.getItem("namen-name");
 
-const usersnames = (names, username) => {
-    return names.filter(n => n.user === username);
-};
-
-const ownnames = (names) => usersnames(names, username);
-
-const propList = obj => {
-    var properties = [];
-    for (let p in obj) properties.push(p);
-    return properties;
-}
-
-const contains = (arr, e) => arr.indexOf(e) >= 0;
-
-const duplicates = names => {
-    let pc = countProps(pluck(names, 'name'));
-    return propList(pc).
-        filter(p => pc[p] > 1).
-        map(e => { return { name: e } });
-};
-
-const countProps = (arr) => {
-    return arr.reduce((acc, curr) => {
-        acc[curr] = acc[curr] + 1 || 1;
-        return acc;
-    }, {});
-}
-
-const pluck = (arr, prop) => arr.map(e => e[prop]);
-
-const mapObj = (obj) => {
-    let props = propList(obj);
-    return props.map(prop => { return { key: prop, value: obj[prop] }; });
-}
 
 class InputWithEnter {
-    inputEvent(vnode) {
-        return (e) => {
-            console.log(e);
-            if (this.name && this.name.length > 1 && e.keyCode === 13) {
-                bus.send("sendName", {
-                    name: this.name,
-                    user: username
-                });
-                e.target.value = ('');
-            } else {
-                this.name = e.target.value;
-            }
-        }
+  inputEvent(vnode) {
+    return (e) => {
+      if (this.name && this.name.length > 1 && e.keyCode === 13) {
+        vnode.attrs.onenter(this.name);
+        e.target.value = ('');
+      } else {
+        this.name = e.target.value;
+      }
     }
-    view(vnode) {
-        return __WEBPACK_IMPORTED_MODULE_0_mithril___default()('input.form-control', {
-            onkeyup: this.inputEvent(vnode)
-        })
-    }
+  }
+  view(vnode) {
+    return __WEBPACK_IMPORTED_MODULE_0_mithril___default()('input.form-control', {
+      onkeyup: this.inputEvent(vnode)
+    })
+  }
 }
 
-const actions = [
-    {
-        glyph: 'glyphicon-remove',
-        run: (name) => (e) => bus.send('removeName', name)
-    }
-]
+const actions = [{
+  glyph: 'glyphicon-remove',
+  run: (name) => (e) => bus.send('removeName', name)
+}]
 
 class ListGroup {
-    view(vnode){
-        return __WEBPACK_IMPORTED_MODULE_0_mithril___default()('.list-group', vnode.attrs, vnode.children);
-    }
+  view(vnode) {
+    return __WEBPACK_IMPORTED_MODULE_0_mithril___default()('.list-group', vnode.attrs, vnode.children);
+  }
 }
 class ListGroupItem {
-    view(vnode){
-        return __WEBPACK_IMPORTED_MODULE_0_mithril___default()('.list-group-item', vnode.attrs, vnode.children);
-    }
+  view(vnode) {
+    return __WEBPACK_IMPORTED_MODULE_0_mithril___default()('.list-group-item', vnode.attrs, vnode.children);
+  }
+}
+
+class WikiLink {
+  view(vnode) {
+    __WEBPACK_IMPORTED_MODULE_0_mithril___default()('a', {
+      href: 'https://' + (vnode.attrs.lang ? +vnode.attrs.lang : 'de') +
+        '.wikipedia.org/wiki/' + vnode.attrs.link
+    }, vnode.attrs.text ? vnode.attrs.text : vnode.attrs.link);
+  }
 }
 
 class NameList {
-    view(vnode) {
-        return vnode.attrs.names && vnode.attrs.names.length > 0 ?
-            __WEBPACK_IMPORTED_MODULE_0_mithril___default()(ListGroup,
-                vnode.attrs.names.map(name => __WEBPACK_IMPORTED_MODULE_0_mithril___default()(ListGroupItem, __WEBPACK_IMPORTED_MODULE_0_mithril___default()('a', {
-                    href: 'https://de.wikipedia.org/wiki/' + name.name
-                }, name.name), vnode.attrs.actions ? vnode.attrs.actions.map(action => {
-                    return __WEBPACK_IMPORTED_MODULE_0_mithril___default()('button.pull-right', {
-                        onclick: action.run(name)
-                    }, __WEBPACK_IMPORTED_MODULE_0_mithril___default()('i.glyphicon.' + action.glyph));
-                }) : null))
-            ) : __WEBPACK_IMPORTED_MODULE_0_mithril___default()('', 'Noch keine Namen hier...');
-    }
+  view(vnode) {
+    return vnode.attrs.names && vnode.attrs.names.length > 0 ?
+      __WEBPACK_IMPORTED_MODULE_0_mithril___default()(ListGroup,
+        vnode.attrs.names.map(name => __WEBPACK_IMPORTED_MODULE_0_mithril___default()(ListGroupItem, __WEBPACK_IMPORTED_MODULE_0_mithril___default()(WikiLink, {
+          link: name.name
+        }), vnode.attrs.actions ? vnode.attrs.actions.map(action => {
+          return __WEBPACK_IMPORTED_MODULE_0_mithril___default()('button.pull-right', {
+            onclick: action.run(name)
+          }, __WEBPACK_IMPORTED_MODULE_0_mithril___default()('i.glyphicon.' + action.glyph));
+        }) : null))
+      ) : __WEBPACK_IMPORTED_MODULE_0_mithril___default()('', 'Noch keine Namen hier...');
+  }
 }
 
 class OnlineBadge {
-    view(vnode) {
-        return vnode.attrs.connected?
-         __WEBPACK_IMPORTED_MODULE_0_mithril___default()('.badge',{style:'background-color:green'}, 'online'):
-         __WEBPACK_IMPORTED_MODULE_0_mithril___default()('.badge',{style:'background-color:red'}, 'offline');
-    }
+  view(vnode) {
+    return vnode.attrs.connected ?
+      __WEBPACK_IMPORTED_MODULE_0_mithril___default()('.badge', {
+        style: 'background-color:green'
+      }, 'online') :
+      __WEBPACK_IMPORTED_MODULE_0_mithril___default()('.badge', {
+        style: 'background-color:red'
+      }, 'offline');
+  }
 }
 
 class Layout {
-    view(vnode) {
-        return username ? [
-            __WEBPACK_IMPORTED_MODULE_0_mithril___default()('.container',
-                __WEBPACK_IMPORTED_MODULE_0_mithril___default()('h1', 'Die Suche nach dem heiligen Gral',' ',__WEBPACK_IMPORTED_MODULE_0_mithril___default()(OnlineBadge,{connected:connected})),
-                __WEBPACK_IMPORTED_MODULE_0_mithril___default()(NameList, { names: ownnames(names), actions: actions }),
-                __WEBPACK_IMPORTED_MODULE_0_mithril___default()(InputWithEnter),
-                __WEBPACK_IMPORTED_MODULE_0_mithril___default()('h1', __WEBPACK_IMPORTED_MODULE_0_mithril___default()('i.glyphicon.glyphicon-heart'), ' ', 'Gemeinsamkeiten'),
-                __WEBPACK_IMPORTED_MODULE_0_mithril___default()(NameList, { names: duplicates(names) }),
-                __WEBPACK_IMPORTED_MODULE_0_mithril___default()('hr'),
-                __WEBPACK_IMPORTED_MODULE_0_mithril___default()('h2', __WEBPACK_IMPORTED_MODULE_0_mithril___default()('i.glyphicon.glyphicon-user'), ' ', 'Teilnehmer'),
-                __WEBPACK_IMPORTED_MODULE_0_mithril___default()('ul',
-                    mapObj(countProps(pluck(names, 'user'))).
-                        map(kv => __WEBPACK_IMPORTED_MODULE_0_mithril___default()('li', kv.key, ' ', __WEBPACK_IMPORTED_MODULE_0_mithril___default()('.badge', kv.value))))
-            )
-        ] : [
-                __WEBPACK_IMPORTED_MODULE_0_mithril___default()('.container',
-                    __WEBPACK_IMPORTED_MODULE_0_mithril___default()('h1', 'Wie ist Dein Name?'),
-                    __WEBPACK_IMPORTED_MODULE_0_mithril___default()('input.form-control', {
-                        placeHolder: 'Name',
-                        onchange: ev => {
-                            username = ev.target.value;
-                            localStorage.setItem("namen-name", username);
-                            console.log(username)
-                        }
-                    }),
-                    __WEBPACK_IMPORTED_MODULE_0_mithril___default()('button.btn.btn-success', 'Login')
-                )
-            ]
-    }
+  view(vnode) {
+    return username ? [
+      __WEBPACK_IMPORTED_MODULE_0_mithril___default()('.container',
+        __WEBPACK_IMPORTED_MODULE_0_mithril___default()('h1', 'Die Suche nach dem heiligen Gral', ' ', __WEBPACK_IMPORTED_MODULE_0_mithril___default()(OnlineBadge, {
+          connected: connected
+        })),
+        __WEBPACK_IMPORTED_MODULE_0_mithril___default()(NameList, {
+          names: ownnames(names),
+          actions: actions
+        }),
+        __WEBPACK_IMPORTED_MODULE_0_mithril___default()(InputWithEnter),
+        __WEBPACK_IMPORTED_MODULE_0_mithril___default()('h1', __WEBPACK_IMPORTED_MODULE_0_mithril___default()('i.glyphicon.glyphicon-heart'), ' ', 'Gemeinsamkeiten'),
+        __WEBPACK_IMPORTED_MODULE_0_mithril___default()(NameList, {
+          names: duplicates(names)
+        }),
+        __WEBPACK_IMPORTED_MODULE_0_mithril___default()('hr'),
+        __WEBPACK_IMPORTED_MODULE_0_mithril___default()('h2', __WEBPACK_IMPORTED_MODULE_0_mithril___default()('i.glyphicon.glyphicon-user'), ' ', 'Teilnehmer'),
+        __WEBPACK_IMPORTED_MODULE_0_mithril___default()('ul',
+          mapObj(countProps(pluck(names, 'user'))).map(kv => __WEBPACK_IMPORTED_MODULE_0_mithril___default()('li', kv.key, ' ', __WEBPACK_IMPORTED_MODULE_0_mithril___default()('.badge', kv.value))))
+      )
+    ] : [
+      __WEBPACK_IMPORTED_MODULE_0_mithril___default()('.container',
+        __WEBPACK_IMPORTED_MODULE_0_mithril___default()('h1', 'Wie ist Dein Name?'),
+        __WEBPACK_IMPORTED_MODULE_0_mithril___default()('input.form-control', {
+          placeHolder: 'Name',
+          onchange: ev => {
+            username = ev.target.value;
+            localStorage.setItem("namen-name", username);
+            console.log(username)
+          }
+        }),
+        __WEBPACK_IMPORTED_MODULE_0_mithril___default()('button.btn.btn-success', 'Login')
+      )
+    ]
+  }
 }
 
-__WEBPACK_IMPORTED_MODULE_0_mithril___default.a.mount(document.body, { view: vnode => [__WEBPACK_IMPORTED_MODULE_0_mithril___default()(Layout)] });
+__WEBPACK_IMPORTED_MODULE_0_mithril___default.a.mount(document.body, {
+  view: vnode => [__WEBPACK_IMPORTED_MODULE_0_mithril___default()(Layout)]
+});
+
 
 /***/ }),
 /* 34 */
@@ -8329,6 +8303,46 @@ FacadeJS.prototype._close = function() {
 
 module.exports = FacadeJS;
 
+
+/***/ }),
+/* 70 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+const propList = obj => {
+  var properties = [];
+  for (let p in obj) properties.push(p);
+  return properties;
+}
+
+const contains = (arr, e) => arr.indexOf(e) >= 0;
+
+const countProps = (arr) => {
+  return arr.reduce((acc, curr) => {
+    acc[curr] = acc[curr] + 1 || 1;
+    return acc;
+  }, {});
+};
+
+const pluck = (arr, prop) => arr.map(e => e[prop]);
+
+const asKeyValueList = (obj) => {
+  let props = propList(obj);
+  return props.map(prop => {
+    return {
+      key: prop,
+      value: obj[prop]
+    };
+  });
+};
+
+/* unused harmony default export */ var _unused_webpack_default_export = ({
+    asKeyValueList,
+    pluck,
+    countProps,
+    propList,
+    contains
+});
 
 /***/ })
 /******/ ]);
