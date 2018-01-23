@@ -53,7 +53,7 @@ class ListGroup {
 
 class ListGroupItem {
   view(vnode) {
-    return m('.list-group-item', vnode.attrs, vnode.children);
+    return m('a.list-group-item', vnode.attrs, vnode.children);
   }
 }
 
@@ -161,6 +161,7 @@ class User {
     bus.send('setUserName', {usr: this.id, grp: this.group.id, name:name})
   }
   upgrade(memberName) {
+    if (confirm('Soll ich diesen Benutzer wirklich zum Administrator erheben? Das kann zu Ehekrach führen ;-)!'))
     bus.send('upgrade', {usr: this.id, grp: this.group.id, member:memberName})
   }
 }
@@ -231,8 +232,9 @@ class TeamView {
             ' ',
             member.length > 0? member: 'Anonymous der Große (bislang)',
           ' ',
-          user.group.me.role === 'INITIATOR' ? m('button.btn-xs.btn-default',{            onclick:e => user.upgrade(member)
-},m(Icon,{
+          user.group.me.role === 'INITIATOR' ? m('button.btn-xs.btn-default',{
+                 onclick:e => user.upgrade(member)
+               },m(Icon,{
             icon:'chevron-up',
           })):null
         );
@@ -254,21 +256,22 @@ class NameListView {
       m('h1',m('button.btn.btn-primary',{
         onclick:e => user.leaveGroup()
       },m(Icon,{icon:'arrow-left'})), ' ' ,user.group.name),
-      m('h2', m(Icon,{icon:'heart'}),' ','Gemeinsame Vorschläge von ', user.group.initiators.join(', ')),
+      m('h2', m(Icon,{icon:'heart'}),' ','Treffer von ', user.group.initiators.join(', ')),
        m(NameList,{
          names: user.group.duplicates
 //           actions: [{ glyph: 'ok', run: (name)=> (e) => console.log(name)}]
       }),
-      m('h2','Meine Vorschläge als ',user.group.me.role === 'INITIATOR'?'Initiator':' Vorschläger'),
+      m('h2','Meine Vorschläge '/*,user.group.me.role === 'INITIATOR'?'Initiator':' Vorschläger'*/),
     m(NameList,{
       onadd: name => user.propose(name),
       names: user.group.me.nominations,
       actions: actions
-    }),      m('h2','Vorschlägervorschläge von ', user.group.proposers.join(', ')),
+    }),      user.group.proposersNominations.length>0?[
+     m('h2','Tipps von ', user.group.proposers.join(', ')),
         m(NameList,{
           names: user.group.proposersNominations,
           actions: [{ glyph: 'ok', run: (name)=> (e) =>  user.propose(name)}]
-        }),
+        })]:null,
         m(TeamView, {user: user})
 ];
   }
