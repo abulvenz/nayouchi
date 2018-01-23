@@ -3430,22 +3430,14 @@ bus.enableReconnect(true);
 
 let connected = false;
 
+
 bus.onopen = () => {
   connected = true;
-  bus.registerHandler('removedName', (err, msg) => {
-    let name = msg.body;
-    __WEBPACK_IMPORTED_MODULE_0_mithril___default.a.redraw();
-  });
-  bus.send('fetch', 'doit', (err, result) => {
-    names = result.body;
-    __WEBPACK_IMPORTED_MODULE_0_mithril___default.a.redraw();
-  });
   __WEBPACK_IMPORTED_MODULE_0_mithril___default.a.redraw();
 };
 
 bus.onclose = e => {
   connected = false;
-  console.log('disconnected');
   __WEBPACK_IMPORTED_MODULE_0_mithril___default.a.redraw();
 };
 
@@ -3460,17 +3452,20 @@ class InputWithEnter {
       }
     }
   }
-  
   view(vnode) {
-    return __WEBPACK_IMPORTED_MODULE_0_mithril___default()('input.form-control', {
-      onkeyup: this.inputEvent(vnode)
-    })
+    return __WEBPACK_IMPORTED_MODULE_0_mithril___default()('.input-group',
+      vnode.attrs.icon? __WEBPACK_IMPORTED_MODULE_0_mithril___default()('span.input-group-addon',__WEBPACK_IMPORTED_MODULE_0_mithril___default()(Icon,{icon:vnode.attrs.icon})):null,
+      __WEBPACK_IMPORTED_MODULE_0_mithril___default()('input.form-control', {
+        onkeyup: this.inputEvent(vnode),
+        placeHolder: vnode.attrs.placeHolder
+      })
+    )
   }
 }
 
 const actions = [{
-  glyph: 'glyphicon-remove',
-  run: (name) => (e) => bus.send('removeName', name)
+  glyph: 'remove',
+  run: (name) => (e) => user.removeName(name)
 }]
 
 class ListGroup {
@@ -3478,15 +3473,28 @@ class ListGroup {
     return __WEBPACK_IMPORTED_MODULE_0_mithril___default()('.list-group', vnode.attrs, vnode.children);
   }
 }
+
 class ListGroupItem {
   view(vnode) {
     return __WEBPACK_IMPORTED_MODULE_0_mithril___default()('.list-group-item', vnode.attrs, vnode.children);
   }
 }
 
+class Container {
+  view(vnode){
+    return __WEBPACK_IMPORTED_MODULE_0_mithril___default()('.container', vnode.attrs, vnode.children);
+  }
+}
+
+class Jumbotron {
+  view(vnode){
+    return __WEBPACK_IMPORTED_MODULE_0_mithril___default()('.jumbotron', vnode.attrs, vnode.children);
+  }
+}
+
 class WikiLink {
   view(vnode) {
-    __WEBPACK_IMPORTED_MODULE_0_mithril___default()('a', {
+    return __WEBPACK_IMPORTED_MODULE_0_mithril___default()('a', {
       href: 'https://' + (vnode.attrs.lang ? +vnode.attrs.lang : 'de') +
         '.wikipedia.org/wiki/' + vnode.attrs.link
     }, vnode.attrs.text ? vnode.attrs.text : vnode.attrs.link);
@@ -3497,12 +3505,17 @@ class NameList {
   view(vnode) {
     return vnode.attrs.names && vnode.attrs.names.length > 0 ?
       __WEBPACK_IMPORTED_MODULE_0_mithril___default()(ListGroup,
-        vnode.attrs.names.map(name => __WEBPACK_IMPORTED_MODULE_0_mithril___default()(ListGroupItem, __WEBPACK_IMPORTED_MODULE_0_mithril___default()(WikiLink, {
-          link: name.name
+        vnode.attrs.onadd? __WEBPACK_IMPORTED_MODULE_0_mithril___default()(ListGroupItem,
+          __WEBPACK_IMPORTED_MODULE_0_mithril___default()(InputWithEnter,{
+            icon:'plus',
+            onenter:n=>vnode.attrs.onadd(n)
+          })):null,
+        vnode.attrs.names.map(name_ => __WEBPACK_IMPORTED_MODULE_0_mithril___default()(ListGroupItem, __WEBPACK_IMPORTED_MODULE_0_mithril___default()(WikiLink, {
+          link: name_
         }), vnode.attrs.actions ? vnode.attrs.actions.map(action => {
-          return __WEBPACK_IMPORTED_MODULE_0_mithril___default()('button.pull-right', {
-            onclick: action.run(name)
-          }, __WEBPACK_IMPORTED_MODULE_0_mithril___default()('i.glyphicon.' + action.glyph));
+          return __WEBPACK_IMPORTED_MODULE_0_mithril___default()('button.btn.btn-xs.btn-default.pull-right', {
+            onclick: action.run(name_)
+          }, __WEBPACK_IMPORTED_MODULE_0_mithril___default()(Icon,{icon: action.glyph}));
         }) : null))
       ) : __WEBPACK_IMPORTED_MODULE_0_mithril___default()('', 'Noch keine Namen hier...');
   }
@@ -3520,46 +3533,232 @@ class OnlineBadge {
   }
 }
 
-class Layout {
-  view(vnode) {
-    return username ? [
-      __WEBPACK_IMPORTED_MODULE_0_mithril___default()('.container',
-        __WEBPACK_IMPORTED_MODULE_0_mithril___default()('h1', 'Die Suche nach dem heiligen Gral', ' ', __WEBPACK_IMPORTED_MODULE_0_mithril___default()(OnlineBadge, {
-          connected: connected
-        })),
-        __WEBPACK_IMPORTED_MODULE_0_mithril___default()(NameList, {
-          names: ownnames(names),
-          actions: actions
-        }),
-        __WEBPACK_IMPORTED_MODULE_0_mithril___default()(InputWithEnter),
-        __WEBPACK_IMPORTED_MODULE_0_mithril___default()('h1', __WEBPACK_IMPORTED_MODULE_0_mithril___default()('i.glyphicon.glyphicon-heart'), ' ', 'Gemeinsamkeiten'),
-        __WEBPACK_IMPORTED_MODULE_0_mithril___default()(NameList, {
-          names: duplicates(names)
-        }),
-        __WEBPACK_IMPORTED_MODULE_0_mithril___default()('hr'),
-        __WEBPACK_IMPORTED_MODULE_0_mithril___default()('h2', __WEBPACK_IMPORTED_MODULE_0_mithril___default()('i.glyphicon.glyphicon-user'), ' ', 'Teilnehmer'),
-        __WEBPACK_IMPORTED_MODULE_0_mithril___default()('ul',
-          mapObj(countProps(pluck(names, 'user'))).map(kv => __WEBPACK_IMPORTED_MODULE_0_mithril___default()('li', kv.key, ' ', __WEBPACK_IMPORTED_MODULE_0_mithril___default()('.badge', kv.value))))
-      )
-    ] : [
-      __WEBPACK_IMPORTED_MODULE_0_mithril___default()('.container',
-        __WEBPACK_IMPORTED_MODULE_0_mithril___default()('h1', 'Wie ist Dein Name?'),
-        __WEBPACK_IMPORTED_MODULE_0_mithril___default()('input.form-control', {
-          placeHolder: 'Name',
-          onchange: ev => {
-            username = ev.target.value;
-            localStorage.setItem("namen-name", username);
-            console.log(username)
-          }
-        }),
-        __WEBPACK_IMPORTED_MODULE_0_mithril___default()('button.btn.btn-success', 'Login')
-      )
-    ]
+class User {
+  constructor(id) {
+    this.id = id;
+    this.fetchList();
+  }
+  fetchList() {
+    bus.send('list',{usr: this.id},(err, msg)=>{
+      this.groups = msg.body;
+      __WEBPACK_IMPORTED_MODULE_0_mithril___default.a.redraw();
+    });
+  }
+  enterGroup(id, update = false) {
+    bus.send('enter',{usr: this.id, grp:id},(err, msg)=>{
+      this.group = msg.body;
+      this.groups = null;
+      if (!update) {
+        bus.registerHandler('grp-'+id,(err, msg)=>{
+          this.enterGroup(id, true);
+        });
+      }
+      __WEBPACK_IMPORTED_MODULE_0_mithril___default.a.redraw();
+    });
+  }
+  leaveGroup() {
+    bus.unregisterHandler('grp-'+this.group.id);
+    this.group = null;
+    this.fetchList();
+  }
+  propose(name) {
+    if (!this.group) {
+      console.error('A group must be entered to add a name.');
+      return;
+    }
+    bus.send('proposeName',{grp: this.group.id, usr: this.id, name: name});
+  }
+  removeName(name) {
+    if (!this.group) {
+      console.error('A group must be entered to remove a name.');
+      return;
+    }
+    bus.send('removeName',{grp: this.group.id, usr: this.id, name: name});
+  }
+  createGroup(name) {
+    bus.send('create', {name: name, usr: this.id}, (err, res)=>this.fetchList())
+  }
+  addMember(email) {
+    bus.send('addMember', {usr: this.id, grp: this.group.id, email: email});
+  }
+  setUserName(name) {
+    bus.send('setUserName', {usr: this.id, grp: this.group.id, name:name})
+  }
+  upgrade(memberName) {
+    bus.send('upgrade', {usr: this.id, grp: this.group.id, member:memberName})
   }
 }
 
+class Header {
+  view(vnode){
+    return __WEBPACK_IMPORTED_MODULE_0_mithril___default()(Jumbotron,
+      __WEBPACK_IMPORTED_MODULE_0_mithril___default()('h1.text-center',__WEBPACK_IMPORTED_MODULE_0_mithril___default()(OnlineBadge, {
+        connected: connected
+      }), ' Nayouchi ', __WEBPACK_IMPORTED_MODULE_0_mithril___default()(OnlineBadge, {
+        connected: connected
+      })),
+      __WEBPACK_IMPORTED_MODULE_0_mithril___default()('img.center-block', {width:'10%', src:'/storch.png'})
+    );
+  }
+}
+
+class Icon {
+  view(vnode) {
+    return __WEBPACK_IMPORTED_MODULE_0_mithril___default()('i.glyphicon.glyphicon-' + vnode.attrs.icon, '');
+  }
+}
+
+class GroupView {
+  view(vnode){
+    let grp = vnode.attrs.group;
+    return __WEBPACK_IMPORTED_MODULE_0_mithril___default()(ListGroupItem, { onclick:e=> user.enterGroup(grp.id) },
+      __WEBPACK_IMPORTED_MODULE_0_mithril___default()(Icon, {icon:'star'}), ' ',
+      grp.name,
+      ' ( ', grp.others.map(o=>o.name).join(', '), ' )',
+      __WEBPACK_IMPORTED_MODULE_0_mithril___default()('.badge', grp.me.nominations.length),
+      __WEBPACK_IMPORTED_MODULE_0_mithril___default()(Icon,{icon:'arrow-right'})
+    );
+  }
+}
+
+class GroupListView {
+  view(vnode){
+    return __WEBPACK_IMPORTED_MODULE_0_mithril___default()(ListGroup,
+      vnode.attrs.user.groups.map(group=>__WEBPACK_IMPORTED_MODULE_0_mithril___default()(GroupView,{group})),
+      vnode.attrs.onadd? __WEBPACK_IMPORTED_MODULE_0_mithril___default()(ListGroupItem,
+        __WEBPACK_IMPORTED_MODULE_0_mithril___default()(InputWithEnter,{
+          icon:'plus',
+          placeHolder: 'Create group',
+          onenter:n=>vnode.attrs.onadd(n)
+        })):null
+    );
+  }
+}
+
+class TeamView {
+  view(vnode){
+    return [
+      __WEBPACK_IMPORTED_MODULE_0_mithril___default()('h2',__WEBPACK_IMPORTED_MODULE_0_mithril___default()(Icon, {icon: 'bullhorn'}),' ','Der Vor-Schlägertrupp'),
+      __WEBPACK_IMPORTED_MODULE_0_mithril___default()(ListGroup,
+        vnode.attrs.user.group.initiators.map(member => {
+          return __WEBPACK_IMPORTED_MODULE_0_mithril___default()(ListGroupItem,
+            __WEBPACK_IMPORTED_MODULE_0_mithril___default()(Icon,{icon:'user',style:'text-color:red'}),
+            ' ',
+            member,
+            ' ',
+            __WEBPACK_IMPORTED_MODULE_0_mithril___default()(Icon,{icon:'certificate'})
+            );
+        }),
+        vnode.attrs.user.group.proposers.map(member=>{
+          return __WEBPACK_IMPORTED_MODULE_0_mithril___default()(ListGroupItem,
+            __WEBPACK_IMPORTED_MODULE_0_mithril___default()(Icon,{icon:'user',style:'text-color:red'}),
+            ' ',
+            member.length > 0? member: 'Anonymous der Große (bislang)',
+          ' ',
+          user.group.me.role === 'INITIATOR' ? __WEBPACK_IMPORTED_MODULE_0_mithril___default()('button.btn-xs.btn-default',{            onclick:e => user.upgrade(member)
+},__WEBPACK_IMPORTED_MODULE_0_mithril___default()(Icon,{
+            icon:'chevron-up',
+          })):null
+        );
+        }),
+        user.group.me.role === 'INITIATOR'? __WEBPACK_IMPORTED_MODULE_0_mithril___default()(ListGroupItem,
+          __WEBPACK_IMPORTED_MODULE_0_mithril___default()(InputWithEnter,{
+            icon:'envelope',
+            placeHolder: 'Add member or remind them to propose names',
+            onenter:n=>user.addMember(n)
+          })):null
+        )
+    ];
+  }
+}
+
+class NameListView {
+  view(vnode){
+    return [
+      __WEBPACK_IMPORTED_MODULE_0_mithril___default()('h1',__WEBPACK_IMPORTED_MODULE_0_mithril___default()('button.btn.btn-primary',{
+        onclick:e => user.leaveGroup()
+      },__WEBPACK_IMPORTED_MODULE_0_mithril___default()(Icon,{icon:'arrow-left'})), ' ' ,user.group.name),
+      __WEBPACK_IMPORTED_MODULE_0_mithril___default()('h2', __WEBPACK_IMPORTED_MODULE_0_mithril___default()(Icon,{icon:'heart'}),' ','Gemeinsame Vorschläge von ', user.group.initiators.join(', ')),
+       __WEBPACK_IMPORTED_MODULE_0_mithril___default()(NameList,{
+         names: user.group.duplicates
+//           actions: [{ glyph: 'ok', run: (name)=> (e) => console.log(name)}]
+      }),
+      __WEBPACK_IMPORTED_MODULE_0_mithril___default()('h2','Meine Vorschläge als ',user.group.me.role === 'INITIATOR'?'Initiator':' Vorschläger'),
+    __WEBPACK_IMPORTED_MODULE_0_mithril___default()(NameList,{
+      onadd: name => user.propose(name),
+      names: user.group.me.nominations,
+      actions: actions
+    }),      __WEBPACK_IMPORTED_MODULE_0_mithril___default()('h2','Vorschlägervorschläge von ', user.group.proposers.join(', ')),
+        __WEBPACK_IMPORTED_MODULE_0_mithril___default()(NameList,{
+          names: user.group.proposersNominations,
+          actions: [{ glyph: 'ok', run: (name)=> (e) =>  user.propose(name)}]
+        }),
+        __WEBPACK_IMPORTED_MODULE_0_mithril___default()(TeamView, {user: user})
+];
+  }
+}
+
+class Layout{
+  view(vnode) {
+    return __WEBPACK_IMPORTED_MODULE_0_mithril___default()('body',{}, __WEBPACK_IMPORTED_MODULE_0_mithril___default()(Container,[
+      __WEBPACK_IMPORTED_MODULE_0_mithril___default()(Header),
+      vnode.attrs.user && vnode.attrs.user.groups ?
+      __WEBPACK_IMPORTED_MODULE_0_mithril___default()(GroupListView, {user: vnode.attrs.user, onadd:grpName=> user.createGroup(grpName)}):null,
+      vnode.attrs.user && vnode.attrs.user.group && vnode.attrs.user.group.me.name.length > 0?
+      __WEBPACK_IMPORTED_MODULE_0_mithril___default()(NameListView, {user: vnode.attrs.user}):vnode.attrs.user && vnode.attrs.user.group?[
+        __WEBPACK_IMPORTED_MODULE_0_mithril___default()('h2', 'Bevor man Namen sagen darf, sag mir erst einmal deinen.'),
+        __WEBPACK_IMPORTED_MODULE_0_mithril___default()(InputWithEnter,{icon:'user', onenter:name=>user.setUserName(name)})
+      ]:null,
+      __WEBPACK_IMPORTED_MODULE_0_mithril___default()('pre.well.well-success',JSON.stringify(vnode.attrs.user, undefined,2))
+    ]))
+  }
+}
+
+class SignUp {
+  constructor(vnode) {
+    this.mailSent = false;
+  }
+  sendMail(email){
+    bus.send('signup',{
+      email: email
+    }      , (e)=>{
+      this.email = email;
+              this.mailSent = true;
+              __WEBPACK_IMPORTED_MODULE_0_mithril___default.a.redraw();
+            });
+  }
+  view(vnode) {
+    return __WEBPACK_IMPORTED_MODULE_0_mithril___default()(Container,
+      __WEBPACK_IMPORTED_MODULE_0_mithril___default()(Jumbotron,__WEBPACK_IMPORTED_MODULE_0_mithril___default()('h1','Für das bootstrapping bitte Emailadresse eingeben')),
+      this.mailSent?
+      __WEBPACK_IMPORTED_MODULE_0_mithril___default()('.well','Eine Email mit einem Speziallink wurde gesendet an ' + this.email):
+      __WEBPACK_IMPORTED_MODULE_0_mithril___default()(InputWithEnter,{
+        onenter:email => this.sendMail(email)
+      })
+    )
+  }
+}
+
+
+let pathFracs = window.location.pathname.substring(1).split('/');
+
+let user = null;
+
+var createUser = () => {
+  if (!connected) {
+    setTimeout(createUser,200);
+  } else {
+    user = new User(pathFracs[1]);
+    __WEBPACK_IMPORTED_MODULE_0_mithril___default.a.redraw();
+  }
+}
+
+if (pathFracs.length > 1)
+  createUser();
+
+
 __WEBPACK_IMPORTED_MODULE_0_mithril___default.a.mount(document.body, {
-  view: vnode => [__WEBPACK_IMPORTED_MODULE_0_mithril___default()(Layout)]
+  view: vnode => pathFracs.length > 1?[__WEBPACK_IMPORTED_MODULE_0_mithril___default()(Layout,{user})]:[__WEBPACK_IMPORTED_MODULE_0_mithril___default()(SignUp)]
 });
 
 
