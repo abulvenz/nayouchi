@@ -3503,13 +3503,12 @@ class WikiLink {
 
 class NameList {
   view(vnode) {
-    return vnode.attrs.names && vnode.attrs.names.length > 0 ?
-      __WEBPACK_IMPORTED_MODULE_0_mithril___default()(ListGroup,
-        vnode.attrs.onadd? __WEBPACK_IMPORTED_MODULE_0_mithril___default()(ListGroupItem,
-          __WEBPACK_IMPORTED_MODULE_0_mithril___default()(InputWithEnter,{
-            icon:'plus',
-            onenter:n=>vnode.attrs.onadd(n)
-          })):null,
+    return __WEBPACK_IMPORTED_MODULE_0_mithril___default()(ListGroup,
+      vnode.attrs.onadd? __WEBPACK_IMPORTED_MODULE_0_mithril___default()(ListGroupItem,
+        __WEBPACK_IMPORTED_MODULE_0_mithril___default()(InputWithEnter,{
+          icon:'plus',
+          onenter:n=>vnode.attrs.onadd(n)
+        })):null, vnode.attrs.names && vnode.attrs.names.length > 0 ?
         vnode.attrs.names.map(name_ => __WEBPACK_IMPORTED_MODULE_0_mithril___default()(ListGroupItem, __WEBPACK_IMPORTED_MODULE_0_mithril___default()(WikiLink, {
           link: name_
         }), vnode.attrs.actions ? vnode.attrs.actions.map(action => {
@@ -3517,7 +3516,7 @@ class NameList {
             onclick: action.run(name_)
           }, __WEBPACK_IMPORTED_MODULE_0_mithril___default()(Icon,{icon: action.glyph}));
         }) : null))
-      ) : __WEBPACK_IMPORTED_MODULE_0_mithril___default()('', 'Noch keine Namen hier...');
+       : __WEBPACK_IMPORTED_MODULE_0_mithril___default()('', 'Noch keine Namen hier...'));
   }
 }
 
@@ -3709,7 +3708,7 @@ class Layout{
         __WEBPACK_IMPORTED_MODULE_0_mithril___default()('h2', 'Bevor man Namen sagen darf, sag mir erst einmal deinen.'),
         __WEBPACK_IMPORTED_MODULE_0_mithril___default()(InputWithEnter,{icon:'user', onenter:name=>user.setUserName(name)})
       ]:null,
-      __WEBPACK_IMPORTED_MODULE_0_mithril___default()('pre.well.well-success',JSON.stringify(vnode.attrs.user, undefined,2))
+//      m('pre.well.success',JSON.stringify(vnode.attrs.user, undefined,2))
     ]))
   }
 }

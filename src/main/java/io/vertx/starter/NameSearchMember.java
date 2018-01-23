@@ -8,17 +8,20 @@ package io.vertx.starter;
 import io.vertx.core.json.JsonObject;
 import java.util.LinkedList;
 import java.util.List;
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
 
 /**
  *
  * @author iceman
  */
+@XmlAccessorType(XmlAccessType.FIELD)
 public class NameSearchMember {
 
-    String name = "";
-    String id = "";
-    List<String> nominations = new LinkedList<>();
-    Role role = Role.PROPOSER;
+    public String name = "";
+    public String id = "";
+    public List<String> nominations = new LinkedList<>();
+    public Role role = Role.PROPOSER;
 
     JsonObject toPublic() {
         JsonObject result = new JsonObject()

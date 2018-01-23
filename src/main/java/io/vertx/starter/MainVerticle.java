@@ -1,8 +1,10 @@
 package io.vertx.starter;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.Message;
+import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.bridge.PermittedOptions;
@@ -15,10 +17,14 @@ import io.vertx.ext.web.handler.StaticHandler;
 import io.vertx.ext.web.handler.sockjs.BridgeOptions;
 import io.vertx.ext.web.handler.sockjs.SockJSHandler;
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
@@ -41,16 +47,50 @@ public class MainVerticle extends AbstractVerticle {
 
     JsonObject config;
 
-    @Override
-    public void start() {
-
-        try {
-            config = new JsonObject(Buffer.buffer(new BufferedReader(new FileReader("config.json")).lines().collect(Collectors.joining("\n"))));
-        } catch (FileNotFoundException ex) {
+    public void backup(NameSearchGroup group) {
+        final String backupName = databaseConfigFolder() + "/" + group.id + ".json";
+        final File groupFile = new File(backupName);
+        String json = Json.encode(group);
+        System.out.println("io.vertx.starter.MainVerticle.backup(" + backupName + ") " + json);
+        try (final FileWriter fileWriter = new FileWriter(groupFile)) {
+            fileWriter.write(json);
+        } catch (IOException ex) {
             Logger.getLogger(MainVerticle.class.getName()).log(Level.SEVERE, null, ex);
         }
+    }
 
-        createSampleData();
+    TypeReference<List<NameSearchGroup>> createTypeReference() {
+        return new TypeReference<List<NameSearchGroup>>() {
+        };
+    }
+
+    public void restore() {
+        final File databaseBaseFolder = new File(databaseConfigFolder());
+
+        currentGroups = Arrays.stream(databaseBaseFolder.listFiles())
+                .map(file -> createBufferedReader(file))
+                .map(reader -> reader.lines().collect(Collectors.joining()))
+                .map(lastState -> Json.decodeValue(lastState, NameSearchGroup.class))
+                .collect(Collectors.toList());
+
+    }
+
+    private static BufferedReader createBufferedReader(File file) {
+        try {
+            return new BufferedReader(new FileReader(file));
+        } catch (FileNotFoundException ex) {
+            Logger.getLogger(MainVerticle.class.getName()).log(Level.SEVERE, null, ex);
+            throw new RuntimeException(ex);
+        }
+    }
+
+    @Override
+    public void start() {
+        readConfig();
+
+        new File(databaseConfigFolder()).mkdirs();
+
+        restore();
 
         try {
             this.encryptor = MessageDigest.getInstance(securityConfig().getString("encryption"));
@@ -95,6 +135,14 @@ public class MainVerticle extends AbstractVerticle {
                 .listen(generalConfig().getInteger("port"));
     }
 
+    private String databaseConfigFolder() {
+        return config.getJsonObject("database").getString("folder");
+    }
+
+    private void readConfig() {
+        config = new JsonObject(Buffer.buffer(createBufferedReader(new File("config.json")).lines().collect(Collectors.joining())));
+    }
+
     private void distName(Message<JsonObject> msg) {
         update(msg, (names, name) -> {
             names.add(name);
@@ -123,6 +171,8 @@ public class MainVerticle extends AbstractVerticle {
                 .findAny().orElseThrow(() -> new RuntimeException("unknown userID: " + usrID));
 
         user.nominations = todo.apply(user.nominations, name);
+
+        backup(group);
 
         vertx.eventBus().publish("grp-" + grpID, new JsonObject().put("update", "now"));
     }
@@ -155,6 +205,7 @@ public class MainVerticle extends AbstractVerticle {
         NameSearchMember user = findUser(group, filterByUserID);
 
         todo.accept(user);
+        backup(group);
 
         vertx.eventBus().publish("grp-" + group.id, new JsonObject().put("update", "now"));
     }
@@ -175,6 +226,7 @@ public class MainVerticle extends AbstractVerticle {
 
     private MailClient createMailClient() {
         MailConfig mailConfig = new MailConfig(config.getJsonObject("mail"));
+
         mailConfig.setStarttls(StartTLSOptions.REQUIRED);
         return MailClient.createShared(vertx, mailConfig);
     }
@@ -189,6 +241,7 @@ public class MainVerticle extends AbstractVerticle {
         user.role = Role.INITIATOR;
         nsg.members.add(user);
         currentGroups.add(nsg);
+        backup(nsg);
         msg.reply(new JsonObject().put("update", "now"));
     }
 
@@ -248,6 +301,7 @@ public class MainVerticle extends AbstractVerticle {
                 NameSearchMember newMember = new NameSearchMember();
                 newMember.id = id;
                 group.members.add(newMember);
+                backup(group);
                 msg.reply(new JsonObject().put("result", "success").encode());
             } else {
                 msg.reply(new JsonObject().put("result", "error").put("error", sendMail.cause().getMessage()).encode());

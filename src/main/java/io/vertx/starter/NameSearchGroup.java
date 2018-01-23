@@ -10,17 +10,20 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
 
 /**
  *
  * @author iceman
  */
+@XmlAccessorType(XmlAccessType.FIELD)
 public class NameSearchGroup {
 
-    String name = "";
-    String id = "";
+    public String name = "";
+    public String id = "";
 
-    List<NameSearchMember> members = new LinkedList<>();
+    public List<NameSearchMember> members = new LinkedList<>();
 
     JsonObject toPublic(String userID) {
         NameSearchMember me = members.stream()

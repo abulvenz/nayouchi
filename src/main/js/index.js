@@ -80,13 +80,12 @@ class WikiLink {
 
 class NameList {
   view(vnode) {
-    return vnode.attrs.names && vnode.attrs.names.length > 0 ?
-      m(ListGroup,
-        vnode.attrs.onadd? m(ListGroupItem,
-          m(InputWithEnter,{
-            icon:'plus',
-            onenter:n=>vnode.attrs.onadd(n)
-          })):null,
+    return m(ListGroup,
+      vnode.attrs.onadd? m(ListGroupItem,
+        m(InputWithEnter,{
+          icon:'plus',
+          onenter:n=>vnode.attrs.onadd(n)
+        })):null, vnode.attrs.names && vnode.attrs.names.length > 0 ?
         vnode.attrs.names.map(name_ => m(ListGroupItem, m(WikiLink, {
           link: name_
         }), vnode.attrs.actions ? vnode.attrs.actions.map(action => {
@@ -94,7 +93,7 @@ class NameList {
             onclick: action.run(name_)
           }, m(Icon,{icon: action.glyph}));
         }) : null))
-      ) : m('', 'Noch keine Namen hier...');
+       : m('', 'Noch keine Namen hier...'));
   }
 }
 
@@ -286,7 +285,7 @@ class Layout{
         m('h2', 'Bevor man Namen sagen darf, sag mir erst einmal deinen.'),
         m(InputWithEnter,{icon:'user', onenter:name=>user.setUserName(name)})
       ]:null,
-      m('pre.well.well-success',JSON.stringify(vnode.attrs.user, undefined,2))
+//      m('pre.well.success',JSON.stringify(vnode.attrs.user, undefined,2))
     ]))
   }
 }
