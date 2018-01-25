@@ -191,7 +191,7 @@ class GroupView {
     return m(ListGroupItem, { onclick:e=> user.enterGroup(grp.id) },
       m(Icon, {icon:'star'}), ' ',
       grp.name,
-      ' ( ', grp.others.map(o=>o.name).join(', '), ' )',
+      ' ( ', grp.others.map(o=>o.name).join(', '), ' ) ',
       m('.badge', grp.me.nominations.length),
       m(Icon,{icon:'arrow-right'})
     );
@@ -293,6 +293,12 @@ class Layout{
   }
 }
 
+class Spacer {
+  view(vnode){
+    return m('',' ');
+  }
+}
+
 class SignUp {
   constructor(vnode) {
     this.mailSent = false;
@@ -308,12 +314,26 @@ class SignUp {
   }
   view(vnode) {
     return m(Container,
-      m(Jumbotron,m('h1','Für das bootstrapping bitte Emailadresse eingeben')),
+      m(Header),
       this.mailSent?
-      m('.well','Eine Email mit einem Speziallink wurde gesendet an ' + this.email):
-      m(InputWithEnter,{
+      m('.alert.alert-success','Eine Email mit einem Speziallink wurde gesendet an ' + this.email):[
+      m('.row',m('.col-md-6.col-xs-12', m('p', `Hallo Fremder,`,m('br'),`
+       diese Applikation weiss
+        noch nichts über dich und wird das
+         auch in Zukunft nicht tun. Trotzdem
+         lassen wir dich hier deine Email-Adresse eingeben. Häh? Naja:
+        Die Adresse wird nicht gespeichert. Alles was passiert ist, dass du
+        einen eindeutigen Link erhälst, damit du erstens irgendwie eindeutig bist
+        und zweitens keinen Benutzernamen vergessen kannst - du wirst nämlich unter Umständen gleich mehrere haben.`)),
+        m('.col-md-6.col-xs-12', m('p',`
+        Wer das nicht glaubt, kann bei `,m('a[href=https://github.com/abulvenz/nayouchi/tree/enterprise-edition]',m(Icon,{icon:'link'}), 'github'),` nachschauen.
+        `))),
+        m(Spacer,{style:'height:300px'}),
+        m(InputWithEnter,{
+        icon:'envelope',
+      placeHolder: 'Für das bootstrapping bitte Emailadresse eingeben',
         onenter:email => this.sendMail(email)
-      })
+      })]
     )
   }
 }

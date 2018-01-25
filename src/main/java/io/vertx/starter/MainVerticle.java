@@ -1,6 +1,5 @@
 package io.vertx.starter;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.Message;
@@ -57,11 +56,6 @@ public class MainVerticle extends AbstractVerticle {
         } catch (IOException ex) {
             Logger.getLogger(MainVerticle.class.getName()).log(Level.SEVERE, null, ex);
         }
-    }
-
-    TypeReference<List<NameSearchGroup>> createTypeReference() {
-        return new TypeReference<List<NameSearchGroup>>() {
-        };
     }
 
     public void restore() {
@@ -127,16 +121,25 @@ public class MainVerticle extends AbstractVerticle {
         vertx.eventBus().consumer("setUserName", this::setUserName);
         vertx.eventBus().consumer("upgrade", this::upgrade);
 
-        router.route().handler(StaticHandler.create(WEB_ROOT).setCachingEnabled(false));
-        router.route("/styles/*").handler(StaticHandler.create(NODE_MODULES).setCachingEnabled(false));
+        router.route().handler(StaticHandler
+                .create(WEB_ROOT)
+                .setCacheEntryTimeout(3600 * 12 * 1000)
+                .setCachingEnabled(config.getJsonObject("general").getBoolean("caching", Boolean.TRUE))
+                .setMaxAgeSeconds(3600 * 12));
+        router.route("/styles/*").handler(StaticHandler
+                .create(NODE_MODULES)
+                .setCacheEntryTimeout(3600 * 12 * 1000)
+                .setCachingEnabled(true)
+                .setMaxAgeSeconds(3600 * 12)
+        );
 
         vertx.createHttpServer()
                 .requestHandler(router::accept)
-                .listen(generalConfig().getInteger("port"));
+                .listen(generalConfig().getInteger("port", 8888));
     }
 
     private String databaseConfigFolder() {
-        return config.getJsonObject("database").getString("folder");
+        return config.getJsonObject("database").getString("folder", "appState");
     }
 
     private void readConfig() {
@@ -226,7 +229,6 @@ public class MainVerticle extends AbstractVerticle {
 
     private MailClient createMailClient() {
         MailConfig mailConfig = new MailConfig(config.getJsonObject("mail"));
-
         mailConfig.setStarttls(StartTLSOptions.REQUIRED);
         return MailClient.createShared(vertx, mailConfig);
     }
@@ -363,8 +365,4 @@ public class MainVerticle extends AbstractVerticle {
         }
         return sb.toString();
     }
-
-    private void createSampleData() {
-    }
-
 }
