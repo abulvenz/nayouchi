@@ -143,7 +143,15 @@ public class MainVerticle extends AbstractVerticle {
     }
 
     private void readConfig() {
-        config = new JsonObject(Buffer.buffer(createBufferedReader(new File("config.json")).lines().collect(Collectors.joining())));
+        String configStr = System.getenv("APP_CONFIG_STR");
+
+        if (configStr == null) {
+            configStr = createBufferedReader(new File("config.json")).lines().collect(Collectors.joining());
+            System.out.println("io.vertx.starter.MainVerticle.readConfig(FILE) \n " + configStr);
+        } else {
+            System.out.println("io.vertx.starter.MainVerticle.readConfig(ENV) \n " + configStr);
+        }
+        config = new JsonObject(Buffer.buffer(configStr));
     }
 
     private void distName(Message<JsonObject> msg) {
