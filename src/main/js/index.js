@@ -231,7 +231,7 @@ class TeamView {
             member,
             ' ',
             m(Icon,{icon:'certificate'}), 
-            m('button.btn.btn-xs.pull-right',{onclick:e=>user.resign()},m(Icon,{icon:'chevron-right'}))
+            vnode.attrs.user.group.me.name === member? m('button.btn.btn-xs.pull-right',{onclick:e=>user.resign()},m(Icon,{icon:'chevron-right'})):null
             );
         }),
         vnode.attrs.user.group.proposers.map(member=>{
@@ -244,7 +244,8 @@ class TeamView {
                  onclick:e => user.upgrade(member)
                },m(Icon,{
             icon:'chevron-up',
-          })):null
+          })):null, 
+            vnode.attrs.user.group.me.name === member? m('button.btn.btn-xs.pull-right',{onclick:e=>user.resign()},m(Icon,{icon:'chevron-right'})):null
         );
         }),
         user.group.me.role === 'INITIATOR'? m(ListGroupItem,
