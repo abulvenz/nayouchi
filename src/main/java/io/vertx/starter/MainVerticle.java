@@ -138,6 +138,8 @@ public class MainVerticle extends AbstractVerticle {
 
         System.out.println("io.vertx.starter.MainVerticle.start() -> listening on port " + port);
 
+        System.out.println("io.vertx.starter.MainVerticle.start() PORT " + System.getenv("PORT"));
+
         vertx.createHttpServer()
                 .requestHandler(router::accept)
                 .listen(port);
