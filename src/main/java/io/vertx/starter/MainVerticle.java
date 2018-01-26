@@ -86,7 +86,7 @@ public class MainVerticle extends AbstractVerticle {
 
         RedisOptions redisconfig = new RedisOptions();
 
-        redisconfig.addSentinel(System.getenv("REDIS_URL"));
+        redisconfig.setHost(System.getenv("REDIS_URL"));
 
         redis = RedisClient.create(vertx, redisconfig);
 
