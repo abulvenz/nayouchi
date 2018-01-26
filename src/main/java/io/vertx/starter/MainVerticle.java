@@ -135,7 +135,9 @@ public class MainVerticle extends AbstractVerticle {
 
         vertx.createHttpServer()
                 .requestHandler(router::accept)
-                .listen(generalConfig().getInteger("port", 8888));
+                .listen(System.getenv("ON_HEROKU") == null
+                        ? generalConfig().getInteger("port", 8888)
+                        : Integer.parseInt(System.getenv("PORT")));
     }
 
     private String databaseConfigFolder() {
