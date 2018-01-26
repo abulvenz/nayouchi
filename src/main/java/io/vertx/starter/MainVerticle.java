@@ -24,7 +24,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -359,10 +359,10 @@ public class MainVerticle extends AbstractVerticle {
     }
 
     public void restore() {
-        Map<String, String> groups = jedis.hgetAll("groups");
+        Set<String> groups = jedis.hkeys("groups");
 
-        List<NameSearchGroup> currentGroups = groups.entrySet().stream()
-                .map(e -> Json.decodeValue(e.getValue(), NameSearchGroup.class))
+        List<NameSearchGroup> currentGroups = groups.stream()
+                .map(e -> Json.decodeValue(jedis.hget("groups", e), NameSearchGroup.class))
                 .collect(Collectors.toList());
     }
 
