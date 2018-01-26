@@ -94,6 +94,7 @@ public class MainVerticle extends AbstractVerticle {
             if (result.succeeded()) {
                 System.out.println("io.vertx.starter.MainVerticle.start(REDIS: SUCCESS)");
             } else {
+                System.err.println("message: " + result.cause().getMessage());
                 System.out.println("io.vertx.starter.MainVerticle.start(REDIS: FAILED)");
             }
         });
