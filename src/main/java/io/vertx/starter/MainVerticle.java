@@ -51,38 +51,6 @@ public class MainVerticle extends AbstractVerticle {
 
     JsonObject config;
 
-    public void backup(NameSearchGroup group) {
-        final String backupName = databaseConfigFolder() + "/" + group.id + ".json";
-        final File groupFile = new File(backupName);
-        String json = Json.encode(group);
-        System.out.println("io.vertx.starter.MainVerticle.backup(" + backupName + ") " + json);
-        try (final FileWriter fileWriter = new FileWriter(groupFile)) {
-            fileWriter.write(json);
-        } catch (IOException ex) {
-            Logger.getLogger(MainVerticle.class.getName()).log(Level.SEVERE, null, ex);
-        }
-    }
-
-    public void restore() {
-        final File databaseBaseFolder = new File(databaseConfigFolder());
-
-        currentGroups = Arrays.stream(databaseBaseFolder.listFiles())
-                .map(file -> createBufferedReader(file))
-                .map(reader -> reader.lines().collect(Collectors.joining()))
-                .map(lastState -> Json.decodeValue(lastState, NameSearchGroup.class))
-                .collect(Collectors.toList());
-
-    }
-
-    private static BufferedReader createBufferedReader(File file) {
-        try {
-            return new BufferedReader(new FileReader(file));
-        } catch (FileNotFoundException ex) {
-            Logger.getLogger(MainVerticle.class.getName()).log(Level.SEVERE, null, ex);
-            throw new RuntimeException(ex);
-        }
-    }
-
     @Override
     public void start() {
         readConfig();
@@ -91,7 +59,7 @@ public class MainVerticle extends AbstractVerticle {
 
         jedis = new Jedis(System.getenv("REDIS_URL"));
 
-        Long sadd = jedis.sadd("test", "EXAMPLE");
+        System.out.println("value" + jedis.get("test"));
 
         new File(databaseConfigFolder()).mkdirs();
 
@@ -390,5 +358,37 @@ public class MainVerticle extends AbstractVerticle {
             sb.append(Integer.toHexString(0xff & digested[i]));
         }
         return sb.toString();
+    }
+
+    public void backup(NameSearchGroup group) {
+        final String backupName = databaseConfigFolder() + "/" + group.id + ".json";
+        final File groupFile = new File(backupName);
+        String json = Json.encode(group);
+        System.out.println("io.vertx.starter.MainVerticle.backup(" + backupName + ") " + json);
+        try (final FileWriter fileWriter = new FileWriter(groupFile)) {
+            fileWriter.write(json);
+        } catch (IOException ex) {
+            Logger.getLogger(MainVerticle.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+    public void restore() {
+        final File databaseBaseFolder = new File(databaseConfigFolder());
+
+        currentGroups = Arrays.stream(databaseBaseFolder.listFiles())
+                .map(file -> createBufferedReader(file))
+                .map(reader -> reader.lines().collect(Collectors.joining()))
+                .map(lastState -> Json.decodeValue(lastState, NameSearchGroup.class))
+                .collect(Collectors.toList());
+
+    }
+
+    private static BufferedReader createBufferedReader(File file) {
+        try {
+            return new BufferedReader(new FileReader(file));
+        } catch (FileNotFoundException ex) {
+            Logger.getLogger(MainVerticle.class.getName()).log(Level.SEVERE, null, ex);
+            throw new RuntimeException(ex);
+        }
     }
 }
