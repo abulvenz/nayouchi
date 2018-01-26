@@ -23,6 +23,8 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
@@ -87,6 +89,22 @@ public class MainVerticle extends AbstractVerticle {
         RedisOptions redisconfig = new RedisOptions();
 
         redisconfig.setHost(System.getenv("REDIS_URL"));
+
+        try {
+            URL url = new URL(System.getenv("REDIS_URL"));
+            System.out.println("user: " + url.getUserInfo());
+            System.out.println("protocol: " + url.getProtocol());
+            System.out.println("path: " + url.getPath());
+            System.out.println("host: " + url.getHost());
+            System.out.println("port: " + url.getPort());
+            System.out.println("authority: " + url.getAuthority());
+            System.out.println("query: " + url.getQuery());
+            System.out.println("ref: " + url.getRef());
+            System.out.println("port: " + url.getPort());
+
+        } catch (MalformedURLException ex) {
+            Logger.getLogger(MainVerticle.class.getName()).log(Level.SEVERE, null, ex);
+        }
 
         redis = RedisClient.create(vertx, redisconfig);
 
