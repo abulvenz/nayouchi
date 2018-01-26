@@ -138,6 +138,7 @@ class User {
     this.fetchList();
   }
   resign(){
+      if (confirm('Möchtest du die Gruppe wirklich verlassen? Du kannst wieder eingeladen werden, aber deine Vorschläge sind für immer verschwunden!'))
       bus.send("resign",{usr: this.id, grp: this.group.id},(err,response)=>{
           this.leaveGroup();
           m.redraw();
@@ -230,7 +231,7 @@ class TeamView {
             member,
             ' ',
             m(Icon,{icon:'certificate'}), 
-            m('button.btn.btn-xs',{onclick:e=>user.resign()},m(Icon,{icon:'chevron-right'}))
+            m('button.btn.btn-xs.pull-right',{onclick:e=>user.resign()},m(Icon,{icon:'chevron-right'}))
             );
         }),
         vnode.attrs.user.group.proposers.map(member=>{
