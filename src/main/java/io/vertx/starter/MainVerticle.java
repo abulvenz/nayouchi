@@ -90,6 +90,14 @@ public class MainVerticle extends AbstractVerticle {
 
         redis = RedisClient.create(vertx, redisconfig);
 
+        redis.set("example", "TestValue", (result) -> {
+            if (result.succeeded()) {
+                System.out.println("io.vertx.starter.MainVerticle.start(REDIS: SUCCESS)");
+            } else {
+                System.out.println("io.vertx.starter.MainVerticle.start(REDIS: FAILED)");
+            }
+        });
+
         new File(databaseConfigFolder()).mkdirs();
 
         restore();
