@@ -137,6 +137,12 @@ class User {
     this.group = null;
     this.fetchList();
   }
+  resign(){
+      bus.send("resign",{usr: this.id, grp: group.id},(err,response)=>{
+          this.leaveGroup();
+          m.redraw();
+      });
+  }
   propose(name) {
     if (!this.group) {
       console.error('A group must be entered to add a name.');
