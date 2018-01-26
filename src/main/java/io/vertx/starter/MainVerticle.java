@@ -360,6 +360,7 @@ public class MainVerticle extends AbstractVerticle {
 
     public void restore() {
         Map<String, String> groups = jedis.hgetAll("groups");
+
         List<NameSearchGroup> currentGroups = groups.entrySet().stream()
                 .map(e -> Json.decodeValue(e.getValue(), NameSearchGroup.class))
                 .collect(Collectors.toList());
