@@ -59,7 +59,10 @@ public class MainVerticle extends AbstractVerticle {
 
         jedis = new Jedis(System.getenv("REDIS_URL"));
 
-        System.out.println("value" + jedis.get("test"));
+        jedis.set("Type", "GOGOL");
+
+        System.out.println("value: "
+                + jedis.get("Type"));
 
         new File(databaseConfigFolder()).mkdirs();
 
