@@ -23,8 +23,6 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
@@ -37,6 +35,7 @@ import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import redis.clients.jedis.Jedis;
 
 public class MainVerticle extends AbstractVerticle {
 
@@ -48,6 +47,8 @@ public class MainVerticle extends AbstractVerticle {
     MailClient mailClient;
     MessageDigest encryptor;
     RedisClient redis;
+    Jedis jedis;
+
     JsonObject config;
 
     public void backup(NameSearchGroup group) {
@@ -88,35 +89,9 @@ public class MainVerticle extends AbstractVerticle {
 
         RedisOptions redisconfig = new RedisOptions();
 
-        redisconfig.setHost(System.getenv("REDIS_URL"));
+        jedis = new Jedis(System.getenv("REDIS_URL"));
 
-        try {
-            URL url = new URL(System.getenv("REDIS_URL"));
-            System.out.println("user: " + url.getUserInfo());
-            System.out.println("protocol: " + url.getProtocol());
-            System.out.println("path: " + url.getPath());
-            System.out.println("host: " + url.getHost());
-            System.out.println("port: " + url.getPort());
-            System.out.println("authority: " + url.getAuthority());
-            System.out.println("query: " + url.getQuery());
-            System.out.println("ref: " + url.getRef());
-            System.out.println("port: " + url.getPort());
-
-        } catch (MalformedURLException ex) {
-            Logger.getLogger(MainVerticle.class.getName()).log(Level.SEVERE, null, ex);
-        }
-
-        redis = RedisClient.create(vertx, redisconfig);
-
-        redis.set("example", "TestValue", (result) -> {
-            if (result.succeeded()) {
-                System.out.println("io.vertx.starter.MainVerticle.start(REDIS: SUCCESS)");
-            } else {
-                System.out.println("io.vertx.starter.MainVerticle.start(REDIS_URL) " + System.getenv("REDIS_URL"));
-                System.err.println("message: " + result.cause().getMessage());
-                System.out.println("io.vertx.starter.MainVerticle.start(REDIS: FAILED)");
-            }
-        });
+        Long sadd = jedis.sadd("test", "EXAMPLE");
 
         new File(databaseConfigFolder()).mkdirs();
 
