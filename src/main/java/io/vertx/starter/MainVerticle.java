@@ -16,18 +16,15 @@ import io.vertx.ext.web.handler.StaticHandler;
 import io.vertx.ext.web.handler.sockjs.BridgeOptions;
 import io.vertx.ext.web.handler.sockjs.SockJSHandler;
 import io.vertx.redis.RedisClient;
-import io.vertx.redis.RedisOptions;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -55,14 +52,7 @@ public class MainVerticle extends AbstractVerticle {
     public void start() {
         readConfig();
 
-        RedisOptions redisconfig = new RedisOptions();
-
         jedis = new Jedis(System.getenv("REDIS_URL"));
-
-        jedis.set("Type", "GOGOL");
-
-        System.out.println("value: "
-                + jedis.get("Type"));
 
         new File(databaseConfigFolder()).mkdirs();
 
@@ -364,26 +354,16 @@ public class MainVerticle extends AbstractVerticle {
     }
 
     public void backup(NameSearchGroup group) {
-        final String backupName = databaseConfigFolder() + "/" + group.id + ".json";
-        final File groupFile = new File(backupName);
         String json = Json.encode(group);
-        System.out.println("io.vertx.starter.MainVerticle.backup(" + backupName + ") " + json);
-        try (final FileWriter fileWriter = new FileWriter(groupFile)) {
-            fileWriter.write(json);
-        } catch (IOException ex) {
-            Logger.getLogger(MainVerticle.class.getName()).log(Level.SEVERE, null, ex);
-        }
+        jedis.hset("groups", group.id, json);
     }
 
     public void restore() {
-        final File databaseBaseFolder = new File(databaseConfigFolder());
+        Map<String, String> groups = jedis.hgetAll("groups");
 
-        currentGroups = Arrays.stream(databaseBaseFolder.listFiles())
-                .map(file -> createBufferedReader(file))
-                .map(reader -> reader.lines().collect(Collectors.joining()))
-                .map(lastState -> Json.decodeValue(lastState, NameSearchGroup.class))
+        List<NameSearchGroup> currentGroups = groups.entrySet().stream()
+                .map(e -> Json.decodeValue(e.getValue(), NameSearchGroup.class))
                 .collect(Collectors.toList());
-
     }
 
     private static BufferedReader createBufferedReader(File file) {
