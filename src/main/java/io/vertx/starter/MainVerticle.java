@@ -361,7 +361,7 @@ public class MainVerticle extends AbstractVerticle {
     public void restore() {
         Set<String> groups = jedis.hkeys("groups");
 
-        List<NameSearchGroup> currentGroups = groups.stream()
+        currentGroups = groups.stream()
                 .map(e -> Json.decodeValue(jedis.hget("groups", e), NameSearchGroup.class))
                 .collect(Collectors.toList());
     }
