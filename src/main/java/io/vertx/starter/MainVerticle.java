@@ -132,7 +132,7 @@ public class MainVerticle extends AbstractVerticle {
                 .setCachingEnabled(true)
                 .setMaxAgeSeconds(3600 * 12)
         );
-        final int port = System.getenv("ON_HEROKU") == null
+        final int port = System.getenv("PORT") == null
                 ? generalConfig().getInteger("port", 8888)
                 : Integer.parseInt(System.getenv("PORT"));
 
