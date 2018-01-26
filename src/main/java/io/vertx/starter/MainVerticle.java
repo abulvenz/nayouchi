@@ -24,8 +24,10 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -52,7 +54,9 @@ public class MainVerticle extends AbstractVerticle {
     public void start() {
         readConfig();
 
-        jedis = new Jedis(System.getenv("REDIS_URL"));
+        if (System.getenv("REDIS_URL") != null) {
+            jedis = new Jedis(System.getenv("REDIS_URL"));
+        }
 
         new File(databaseConfigFolder()).mkdirs();
 
@@ -92,6 +96,7 @@ public class MainVerticle extends AbstractVerticle {
         vertx.eventBus().consumer("addMember", this::addMember);
         vertx.eventBus().consumer("setUserName", this::setUserName);
         vertx.eventBus().consumer("upgrade", this::upgrade);
+        vertx.eventBus().consumer("resign", this::resign);
 
         router.route().handler(StaticHandler
                 .create(WEB_ROOT)
@@ -147,6 +152,18 @@ public class MainVerticle extends AbstractVerticle {
         });
     }
 
+    private void resign(Message<JsonObject> msg) {
+        String usrID = msg.body().getString("usr");
+        String grpID = msg.body().getString("grp");
+        updateGroup(filterByGroupID(grpID), filterByUserID(usrID), (group, user) -> {
+            group.members = group.members.stream().filter(u -> !u.id.equals(user.id)).collect(Collectors.toList());
+        });
+        msg.reply(
+                findOptionalGroup(filterByGroupID(grpID))
+                        .map(group -> new JsonObject().put("group", "updated"))
+                        .orElse(new JsonObject().put("group", "removed")).encode());
+    }
+
     private void update(Message<JsonObject> msg, BiFunction<List<String>, String, List<String>> todo) {
         String usrID = msg.body().getString("usr");
         String grpID = msg.body().getString("grp");
@@ -190,9 +207,19 @@ public class MainVerticle extends AbstractVerticle {
         return filterByUserID;
     }
 
+    private void updateGroup(final Predicate<NameSearchGroup> filterByGroupID, final Predicate<NameSearchMember> filterByUserID, BiConsumer<NameSearchGroup, NameSearchMember> todo) {
+        NameSearchGroup group = findGroup(filterByGroupID);
+        NameSearchMember user = findUserInGroup(group, filterByUserID);
+
+        todo.accept(group, user);
+        if (backup(group)) {
+            vertx.eventBus().publish("grp-" + group.id, new JsonObject().put("update", "now"));
+        }
+    }
+
     private void updateUser(final Predicate<NameSearchGroup> filterByGroupID, final Predicate<NameSearchMember> filterByUserID, Consumer<NameSearchMember> todo) {
         NameSearchGroup group = findGroup(filterByGroupID);
-        NameSearchMember user = findUser(group, filterByUserID);
+        NameSearchMember user = findUserInGroup(group, filterByUserID);
 
         todo.accept(user);
         backup(group);
@@ -200,11 +227,17 @@ public class MainVerticle extends AbstractVerticle {
         vertx.eventBus().publish("grp-" + group.id, new JsonObject().put("update", "now"));
     }
 
-    private NameSearchMember findUser(NameSearchGroup group, final Predicate<NameSearchMember> filterByUserID) {
+    private NameSearchMember findUserInGroup(NameSearchGroup group, final Predicate<NameSearchMember> filterByUserID) {
         NameSearchMember user = group.members.stream()
                 .filter(filterByUserID)
                 .findAny().orElseThrow(() -> new RuntimeException("user not found"));
         return user;
+    }
+
+    private Optional<NameSearchGroup> findOptionalGroup(final Predicate<NameSearchGroup> filterByGroupID) {
+        return currentGroups.stream()
+                .filter(filterByGroupID)
+                .findAny();
     }
 
     private NameSearchGroup findGroup(final Predicate<NameSearchGroup> filterByGroupID) {
@@ -269,7 +302,7 @@ public class MainVerticle extends AbstractVerticle {
         String grpID = msg.body().getString("grp");
 
         NameSearchGroup group = findGroup(filterByGroupID(grpID));
-        NameSearchMember user = findUser(group, filterByUserID(usrID));
+        NameSearchMember user = findUserInGroup(group, filterByUserID(usrID));
 
         if (user.role == Role.PROPOSER) {
             return;
@@ -353,17 +386,32 @@ public class MainVerticle extends AbstractVerticle {
         return sb.toString();
     }
 
-    public void backup(NameSearchGroup group) {
-        String json = Json.encode(group);
-        jedis.hset("groups", group.id, json);
+    public boolean backup(NameSearchGroup group) {
+        if (group.members.stream().anyMatch(m -> m.role == Role.INITIATOR)) {
+            System.out.println("io.vertx.starter.MainVerticle.backup(BACKUP)");
+            if (jedis != null) {
+                String json = Json.encode(group);
+                jedis.hset("groups", group.id, json);
+            }
+            return true;
+        } else {
+            System.out.println("io.vertx.starter.MainVerticle.backup(REMOVE)");
+            currentGroups.remove(group);
+            if (jedis != null) {
+                jedis.hdel("groups", group.id);
+            }
+        }
+        return false;
     }
 
     public void restore() {
-        Set<String> groups = jedis.hkeys("groups");
+        if (jedis != null) {
+            Set<String> groups = jedis.hkeys("groups");
 
-        currentGroups = groups.stream()
-                .map(e -> Json.decodeValue(jedis.hget("groups", e), NameSearchGroup.class))
-                .collect(Collectors.toList());
+            currentGroups = groups.stream()
+                    .map(e -> Json.decodeValue(jedis.hget("groups", e), NameSearchGroup.class))
+                    .collect(Collectors.toList());
+        }
     }
 
     private static BufferedReader createBufferedReader(File file) {

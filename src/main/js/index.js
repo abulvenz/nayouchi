@@ -138,7 +138,7 @@ class User {
     this.fetchList();
   }
   resign(){
-      bus.send("resign",{usr: this.id, grp: group.id},(err,response)=>{
+      bus.send("resign",{usr: this.id, grp: this.group.id},(err,response)=>{
           this.leaveGroup();
           m.redraw();
       });
@@ -229,7 +229,8 @@ class TeamView {
             ' ',
             member,
             ' ',
-            m(Icon,{icon:'certificate'})
+            m(Icon,{icon:'certificate'}), 
+            m('button.btn.btn-xs',{onclick:e=>user.resign()},m(Icon,{icon:'chevron-right'}))
             );
         }),
         vnode.attrs.user.group.proposers.map(member=>{
