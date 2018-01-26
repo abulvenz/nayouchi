@@ -15,6 +15,8 @@ import io.vertx.ext.web.Router;
 import io.vertx.ext.web.handler.StaticHandler;
 import io.vertx.ext.web.handler.sockjs.BridgeOptions;
 import io.vertx.ext.web.handler.sockjs.SockJSHandler;
+import io.vertx.redis.RedisClient;
+import io.vertx.redis.RedisOptions;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -43,7 +45,7 @@ public class MainVerticle extends AbstractVerticle {
 
     MailClient mailClient;
     MessageDigest encryptor;
-
+    RedisClient redis;
     JsonObject config;
 
     public void backup(NameSearchGroup group) {
@@ -81,6 +83,12 @@ public class MainVerticle extends AbstractVerticle {
     @Override
     public void start() {
         readConfig();
+
+        RedisOptions redisconfig = new RedisOptions(new JsonObject(System.getenv("APP_REDIS_CONFIG")));
+
+        redisconfig.addSentinel(System.getenv("REDIS_URL"));
+
+        redis = RedisClient.create(vertx, redisconfig);
 
         new File(databaseConfigFolder()).mkdirs();
 

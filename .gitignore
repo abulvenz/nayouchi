@@ -11,4 +11,5 @@ buildNumber.properties
 node_modules/
 *~
 config.json
+redisconfig.json
 appState/
