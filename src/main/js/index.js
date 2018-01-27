@@ -168,7 +168,9 @@ class User {
     bus.send('addMember', {usr: this.id, grp: this.group.id, email: email});
   }
   setUserName(name) {
-    bus.send('setUserName', {usr: this.id, grp: this.group.id, name:name})
+    bus.send('setUserName', {usr: this.id, grp: this.group.id, name:name},(err,result)=>{
+        
+    });
   }
   upgrade(memberName) {
     if (confirm('Soll ich diesen Benutzer wirklich zum Administrator erheben? Das kann zu Ehekrach führen ;-)!'))
