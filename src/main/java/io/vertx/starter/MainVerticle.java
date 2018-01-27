@@ -44,7 +44,6 @@ import redis.clients.jedis.Jedis;
 public class MainVerticle extends AbstractVerticle {
 
     private final String WEB_ROOT = "src/main/webroot/";
-    private final String NODE_MODULES = "node_modules/";
 
     List<NameSearchGroup> currentGroups = new LinkedList<>();
 
@@ -84,19 +83,11 @@ public class MainVerticle extends AbstractVerticle {
                 .setCachingEnabled(config.getJsonObject("general").getBoolean("caching", Boolean.TRUE))
                 .setMaxAgeSeconds(3600 * 12));
 
-//        router.route("/styles/*").handler(StaticHandler
-//                .create(NODE_MODULES)
-//                .setCacheEntryTimeout(3600 * 12 * 1000)
-//                .setCachingEnabled(true)
-//                .setMaxAgeSeconds(3600 * 12)
-//        );
         final int port = System.getenv("PORT") == null
                 ? generalConfig().getInteger("port", 8888)
                 : Integer.parseInt(System.getenv("PORT"));
 
         System.out.println("io.vertx.starter.MainVerticle.start() -> listening on port " + port);
-
-        System.out.println("io.vertx.starter.MainVerticle.start() PORT " + System.getenv("PORT"));
 
         vertx.createHttpServer()
                 .requestHandler(router::accept)
@@ -127,10 +118,17 @@ public class MainVerticle extends AbstractVerticle {
         });
     }
 
+    private void updateNames(NameSearchGroup group, NameSearchMember user, Function<List<String>, List<String>> todo) {
+        user.nominations = todo.apply(user.nominations);
+        backupOrRemove(group);
+        sendUpdateSignalToUsers(group);
+    }
+
     @Consumes(path = "resign")
     public void resign(Message<JsonObject> msg) {
         msgGroupAndUser(msg, (group, user) -> {
-            group.members = group.members.stream().filter(u -> !u.id.equals(user.id)).collect(Collectors.toList());
+            updateGroup(group, (__)
+                    -> group.members = group.members.stream().filter(u -> !u.id.equals(user.id)).collect(Collectors.toList()));
         });
 
         msgParam(msg, "grp", grpID
@@ -139,18 +137,14 @@ public class MainVerticle extends AbstractVerticle {
                         .orElse(new JsonObject().put("group", "removed")).encode()));
     }
 
-    private void updateNames(NameSearchGroup group, NameSearchMember user, Function<List<String>, List<String>> todo) {
-        user.nominations = todo.apply(user.nominations);
-        backupOrRemove(group);
-        sendUpdateSignalToUsers(group);
-    }
-
     @Consumes(path = "upgrade")
     public void upgrade(Message<JsonObject> msg) {
-        System.out.println("io.vertx.starter.MainVerticle.upgrade(" + msg.body().encode() + ")");
-        updateUser(grp -> grp.id.equals(msg.body().getString("grp")), user -> user.name.equals(msg.body().getString("member")), user -> {
-            user.role = Role.INITIATOR;
-        });
+        msgParam(msg, "grp", grpID -> msgParam(msg, "member", memberName -> {
+            NameSearchGroup group = groupByID(grpID);
+            updateUser(group, findUserInGroup(group, user -> user.name.equals(memberName)), user -> {
+                user.role = Role.INITIATOR;
+            });
+        }));
     }
 
     @Consumes(path = "create")
@@ -170,16 +164,17 @@ public class MainVerticle extends AbstractVerticle {
 
     @Consumes(path = "list")
     public void listGroups(Message<JsonObject> msg) {
-        String userID = msg.body().getString("usr");
-        List<NameSearchGroup> theUsersGroups = currentGroups.stream()
-                .filter(group -> group.members.stream()
-                .filter(member -> member.id.equals(userID))
-                .findAny()
-                .isPresent())
-                .collect(Collectors.toList());
-        msg.reply(theUsersGroups.stream()
-                .map(group -> group.toPublic(userID))
-                .collect(JsonArray::new, JsonArray::add, JsonArray::addAll));
+        msgParam(msg, "usr", userID -> {
+            List<NameSearchGroup> theUsersGroups = currentGroups.stream()
+                    .filter(group -> group.members.stream()
+                    .filter(member -> member.id.equals(userID))
+                    .findAny()
+                    .isPresent())
+                    .collect(Collectors.toList());
+            msg.reply(theUsersGroups.stream()
+                    .map(group -> group.toPublic(userID))
+                    .collect(JsonArray::new, JsonArray::add, JsonArray::addAll));
+        });
     }
 
     @Consumes(path = "enter")
@@ -191,7 +186,9 @@ public class MainVerticle extends AbstractVerticle {
 
     @Consumes(path = "setUserName")
     public void setUserName(Message<JsonObject> msg) {
-        msgParam(msg, "name", name -> updateUser(msg, user -> user.name = name));
+        msgGroupAndUser(msg, (group, user)
+                -> msgParam(msg, "name", name
+                        -> updateUser(group, user, user_ -> user_.name = name)));
     }
 
     @Consumes(path = "addMember")
@@ -200,7 +197,6 @@ public class MainVerticle extends AbstractVerticle {
             if (user.role == Role.PROPOSER) {
                 return;
             }
-
             msgParam(msg, "email", email -> {
                 String id = encryptWithSecret(email);
 
@@ -270,11 +266,6 @@ public class MainVerticle extends AbstractVerticle {
         });
     }
 
-    private void updateUser(Message<JsonObject> msg, Consumer<NameSearchMember> todo) {
-        msgGroupAndUserID(msg, (grpID, usrID)
-                -> updateUser(filterByGroupID(grpID), filterByUserID(usrID), todo));
-    }
-
     private Predicate<NameSearchGroup> filterByGroupID(String grpID) {
         final Predicate<NameSearchGroup> filterByGroupID = grp -> grp.id.equals(grpID);
         return filterByGroupID;
@@ -285,20 +276,14 @@ public class MainVerticle extends AbstractVerticle {
         return filterByUserID;
     }
 
-    private void updateGroup(final Predicate<NameSearchGroup> filterByGroupID, final Predicate<NameSearchMember> filterByUserID, BiConsumer<NameSearchGroup, NameSearchMember> todo) {
-        NameSearchGroup group = findGroup(filterByGroupID);
-        NameSearchMember user = findUserInGroup(group, filterByUserID);
-
-        todo.accept(group, user);
+    private void updateGroup(NameSearchGroup group, Consumer<NameSearchGroup> todo) {
+        todo.accept(group);
         if (backupOrRemove(group)) {
             sendUpdateSignalToUsers(group);
         }
     }
 
-    private void updateUser(final Predicate<NameSearchGroup> filterByGroupID, final Predicate<NameSearchMember> filterByUserID, Consumer<NameSearchMember> todo) {
-        NameSearchGroup group = findGroup(filterByGroupID);
-        NameSearchMember user = findUserInGroup(group, filterByUserID);
-
+    private void updateUser(NameSearchGroup group, NameSearchMember user, Consumer<NameSearchMember> todo) {
         todo.accept(user);
         backupOrRemove(group);
 
@@ -307,12 +292,6 @@ public class MainVerticle extends AbstractVerticle {
 
     private void sendUpdateSignalToUsers(NameSearchGroup group) {
         vertx.eventBus().publish("grp-" + group.id, new JsonObject().put("update", "now"));
-    }
-
-    private Optional< NameSearchMember> findOptionalUserInGroup(NameSearchGroup group, final Predicate<NameSearchMember> filterByUserID) {
-        return group.members.stream()
-                .filter(filterByUserID)
-                .findAny();
     }
 
     private NameSearchMember findUserInGroup(NameSearchGroup group, final Predicate<NameSearchMember> filterByUserID) {

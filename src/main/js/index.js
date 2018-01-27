@@ -21,6 +21,33 @@ bus.onclose = e => {
   m.redraw();
 };
 
+/***
+ *     _______           _______  _______  _______  _______  _______ 
+ *    (  ___  )|\     /|(  ____ \(  ____ \(  ___  )(       )(  ____ \
+ *    | (   ) || )   ( || (    \/| (    \/| (   ) || () () || (    \/
+ *    | (___) || | _ | || (__    | (_____ | |   | || || || || (__    
+ *    |  ___  || |( )| ||  __)   (_____  )| |   | || |(_)| ||  __)   
+ *    | (   ) || || || || (            ) || |   | || |   | || (      
+ *    | )   ( || () () || (____/\/\____) || (___) || )   ( || (____/\
+ *    |/     \|(_______)(_______/\_______)(_______)|/     \|(_______/
+ *                                                                   
+ *     _______  _______  _______  _______  _______  _       _________
+ *    (  ____ \(  ___  )(       )(       )(  ____ \( (    /|\__   __/
+ *    | (    \/| (   ) || () () || () () || (    \/|  \  ( |   ) (   
+ *    | |      | |   | || || || || || || || (__    |   \ | |   | |   
+ *    | |      | |   | || |(_)| || |(_)| ||  __)   | (\ \) |   | |   
+ *    | |      | |   | || |   | || |   | || (      | | \   |   | |   
+ *    | (____/\| (___) || )   ( || )   ( || (____/\| )  \  |   | |   
+ *    (_______/(_______)|/     \||/     \|(_______/|/    )_)   )_(   
+ *                                                                   
+ */
+
+class Spacer {
+  view(vnode){
+    return m('',' ');
+  }
+}
+
 class Tooltip {
     view(vnode){
         return m('.tooltiptext',vnode.attrs,vnode.children);
@@ -99,36 +126,50 @@ class SubHeading {
     }
 }
 
-class NameList {
+class Heading {
+    view(vnode){
+        return m('h1',vnode.attrs,vnode.children);
+    }
+}
+
+class Icon {
   view(vnode) {
-    return m(ListGroup,
-      vnode.attrs.onadd? m(ListGroupItem,
-        m(InputWithEnter,{
-          icon:'plus',
-          onenter:n=>vnode.attrs.onadd(n)
-        })):null, vnode.attrs.names && vnode.attrs.names.length > 0 ?
-        vnode.attrs.names.map(name_ => m(ListGroupItem, m(WikiLink, {
-          link: name_
-        }), vnode.attrs.actions ? vnode.attrs.actions.map(action => {
-          return m('button.btn.btn-xs.btn-default.pull-right', {
-            onclick: action.run(name_)
-          }, m(Icon,{icon: action.glyph}));
-        }) : null))
-       : m('', 'Noch keine Namen hier...'));
+    return m('i.glyphicon.glyphicon-' + vnode.attrs.icon, '');
   }
 }
 
 class OnlineBadge {
   view(vnode) {
     return vnode.attrs.connected ?
-      m('.badge', {
+      m(SomeThingWithTooltip, m('.badge', {
         style: 'background-color:green'
-      }, 'online') :
-      m('.badge', {
+      }, m(Icon,{icon:'ok-circle'})),m(Tooltip,'Du bist verbunden zum Server.')) :
+     m(SomeThingWithTooltip, m('.badge', {
         style: 'background-color:red'
-      }, 'offline');
+      }, m(Icon,{icon:'ban-circle'})),m(Tooltip,'Du bist nicht verbunden zum Server.'));
   }
 }
+
+/***
+ *     _______           _______  _______  _______  _______  _______ 
+ *    (  ___  )|\     /|(  ____ \(  ____ \(  ___  )(       )(  ____ \
+ *    | (   ) || )   ( || (    \/| (    \/| (   ) || () () || (    \/
+ *    | (___) || | _ | || (__    | (_____ | |   | || || || || (__    
+ *    |  ___  || |( )| ||  __)   (_____  )| |   | || |(_)| ||  __)   
+ *    | (   ) || || || || (            ) || |   | || |   | || (      
+ *    | )   ( || () () || (____/\/\____) || (___) || )   ( || (____/\
+ *    |/     \|(_______)(_______/\_______)(_______)|/     \|(_______/
+ *                                                                   
+ *     _______  _______  _______  _______  _______  _       _________
+ *    (  ____ \(  ___  )(       )(       )(  ____ \( (    /|\__   __/
+ *    | (    \/| (   ) || () () || () () || (    \/|  \  ( |   ) (   
+ *    | |      | |   | || || || || || || || (__    |   \ | |   | |   
+ *    | |      | |   | || |(_)| || |(_)| ||  __)   | (\ \) |   | |   
+ *    | |      | |   | || |   | || |   | || (      | | \   |   | |   
+ *    | (____/\| (___) || )   ( || )   ( || (____/\| )  \  |   | |   
+ *    (_______/(_______)|/     \||/     \|(_______/|/    )_)   )_(   
+ *                                                                   
+ */
 
 class User {
   constructor(id) {
@@ -187,7 +228,7 @@ class User {
   }
   setUserName(name) {
     bus.send('setUserName', {usr: this.id, grp: this.group.id, name:name},(err,result)=>{
-        
+        // TODO check for duplicates here
     });
   }
   upgrade(memberName) {
@@ -195,6 +236,27 @@ class User {
     bus.send('upgrade', {usr: this.id, grp: this.group.id, member:memberName})
   }
 }
+
+/***
+ *     _______           _______  _______  _______  _______  _______ 
+ *    (  ___  )|\     /|(  ____ \(  ____ \(  ___  )(       )(  ____ \
+ *    | (   ) || )   ( || (    \/| (    \/| (   ) || () () || (    \/
+ *    | (___) || | _ | || (__    | (_____ | |   | || || || || (__    
+ *    |  ___  || |( )| ||  __)   (_____  )| |   | || |(_)| ||  __)   
+ *    | (   ) || || || || (            ) || |   | || |   | || (      
+ *    | )   ( || () () || (____/\/\____) || (___) || )   ( || (____/\
+ *    |/     \|(_______)(_______/\_______)(_______)|/     \|(_______/
+ *                                                                   
+ *     _______  _______  _______  _______  _______  _       _________
+ *    (  ____ \(  ___  )(       )(       )(  ____ \( (    /|\__   __/
+ *    | (    \/| (   ) || () () || () () || (    \/|  \  ( |   ) (   
+ *    | |      | |   | || || || || || || || (__    |   \ | |   | |   
+ *    | |      | |   | || |(_)| || |(_)| ||  __)   | (\ \) |   | |   
+ *    | |      | |   | || |   | || |   | || (      | | \   |   | |   
+ *    | (____/\| (___) || )   ( || )   ( || (____/\| )  \  |   | |   
+ *    (_______/(_______)|/     \||/     \|(_______/|/    )_)   )_(   
+ *                                                                   
+ */
 
 class Header {
   view(vnode){
@@ -209,11 +271,26 @@ class Header {
   }
 }
 
-class Icon {
+
+class NameList {
   view(vnode) {
-    return m('i.glyphicon.glyphicon-' + vnode.attrs.icon, '');
+    return m(ListGroup,
+      vnode.attrs.onadd? m(ListGroupItem,
+        m(InputWithEnter,{
+          icon:'plus',
+          onenter:n=>vnode.attrs.onadd(n)
+        })):null, vnode.attrs.names && vnode.attrs.names.length > 0 ?
+        vnode.attrs.names.map(name_ => m(ListGroupItem, m(WikiLink, {
+          link: name_
+        }), vnode.attrs.actions ? vnode.attrs.actions.map(action => {
+          return m('button.btn.btn-xs.btn-default.pull-right', {
+            onclick: action.run(name_)
+          }, m(Icon,{icon: action.glyph}));
+        }) : null))
+       : m('', 'Noch keine Namen hier...'));
   }
 }
+
 
 class GroupView {
   view(vnode){
@@ -223,7 +300,7 @@ class GroupView {
       grp.name,
       ' ( ', grp.others.map(o=>o.name).join(', '), ' ) ',
       m('.badge', grp.me.nominations.length),
-      m(Icon,{icon:'arrow-right'})
+      m('.pull-right',m(Icon,{icon:'arrow-right'}))
     );
   }
 }
@@ -245,7 +322,7 @@ class GroupListView {
 class TeamView {
   view(vnode){
     return [
-      m('h2',m(Icon, {icon: 'bullhorn'}),' ','Der Vor-Schlägertrupp'),
+      m(SubHeading,m(Icon, {icon: 'bullhorn'}),' ','Der Vor-Schlägertrupp'),
       m(ListGroup,
         vnode.attrs.user.group.initiators.map(member => {
           return m(ListGroupItem,
@@ -253,7 +330,7 @@ class TeamView {
             ' ',
             member,
             ' ',
-            m(SomeThingWithTooltip, m(Icon,{icon:'certificate'}),m(Tooltip,'Help')), 
+            m(SomeThingWithTooltip, m(Icon,{icon:'certificate'}),m(Tooltip,'Dieser vielzackige Stern ist das Zeichen für die große Macht der Gruppenentscheider.')), 
             vnode.attrs.user.group.me.name === member? m('button.btn.btn-xs.pull-right',{onclick:e=>user.resign()},m(Icon,{icon:'chevron-right'})):null
             );
         }),
@@ -285,10 +362,10 @@ class TeamView {
 class NameListView {
   view(vnode){
     return [
-      m('h1',m(SomeThingWithTooltip, m('button.btn.btn-primary',{
+      m(Heading,m(SomeThingWithTooltip, m('button.btn.btn-primary',{
         onclick:e => user.leaveGroup()
       },m(Icon,{icon:'arrow-left'})),m(Tooltip,'Zurück zur Gruppenübersicht')), ' ' ,user.group.name),
-      m(SubHeading, m(Icon,{icon:'heart'}),' ','Treffer von ', user.group.initiators.join(', ')),
+      m(SubHeading, m(Icon,{icon:'heart'}),' ',m(SomeThingWithTooltip,'Treffer',m(Tooltip,'Treffer sind alle Übereinstimmungen zwischen den Entscheidern')),' von ', user.group.initiators.join(', ')),
        m(NameList,{
          names: user.group.duplicates
 //           actions: [{ glyph: 'ok', run: (name)=> (e) => console.log(name)}]
@@ -317,17 +394,12 @@ class Layout{
       m(GroupListView, {user: vnode.attrs.user, onadd:grpName=> user.createGroup(grpName)}):null,
       vnode.attrs.user && vnode.attrs.user.group && vnode.attrs.user.group.me.name.length > 0?
       m(NameListView, {user: vnode.attrs.user}):vnode.attrs.user && vnode.attrs.user.group?[
-        m('h2', 'Bevor man Namen sagen darf, sag mir erst einmal deinen.'),
+        m(SubHeading, 'Bevor man Namen sagen darf, sag mir erst einmal deinen.'),
         m(InputWithEnter,{icon:'user', onenter:name=>user.setUserName(name)})
       ]:null,
+      
 //      m('pre.well.success',JSON.stringify(vnode.attrs.user, undefined,2))
     ]))
-  }
-}
-
-class Spacer {
-  view(vnode){
-    return m('',' ');
   }
 }
 
