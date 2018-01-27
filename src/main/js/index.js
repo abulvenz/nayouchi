@@ -162,7 +162,7 @@ class User {
     bus.send('removeName',{grp: this.group.id, usr: this.id, name: name});
   }
   createGroup(name) {
-    bus.send('create', {name: name, usr: this.id}, (err, res)=>this.fetchList())
+    bus.send('create', {name: name, usr: this.id}, (err, res)=>this.enterGroup(res.body.grp))
   }
   addMember(email) {
     bus.send('addMember', {usr: this.id, grp: this.group.id, email: email});

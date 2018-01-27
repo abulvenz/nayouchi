@@ -50,10 +50,6 @@ public class MainVerticle extends AbstractVerticle {
 
     JsonObject config;
 
-    public void log(String str) {
-        System.out.println(">> " + str);
-    }
-
     @Override
     public void start() {
         readConfig();
@@ -107,12 +103,13 @@ public class MainVerticle extends AbstractVerticle {
                 .setCacheEntryTimeout(3600 * 12 * 1000)
                 .setCachingEnabled(config.getJsonObject("general").getBoolean("caching", Boolean.TRUE))
                 .setMaxAgeSeconds(3600 * 12));
-        router.route("/styles/*").handler(StaticHandler
-                .create(NODE_MODULES)
-                .setCacheEntryTimeout(3600 * 12 * 1000)
-                .setCachingEnabled(true)
-                .setMaxAgeSeconds(3600 * 12)
-        );
+
+//        router.route("/styles/*").handler(StaticHandler
+//                .create(NODE_MODULES)
+//                .setCacheEntryTimeout(3600 * 12 * 1000)
+//                .setCachingEnabled(true)
+//                .setMaxAgeSeconds(3600 * 12)
+//        );
         final int port = System.getenv("PORT") == null
                 ? generalConfig().getInteger("port", 8888)
                 : Integer.parseInt(System.getenv("PORT"));
@@ -247,6 +244,12 @@ public class MainVerticle extends AbstractVerticle {
         vertx.eventBus().publish("grp-" + group.id, new JsonObject().put("update", "now"));
     }
 
+    private Optional< NameSearchMember> findOptionalUserInGroup(NameSearchGroup group, final Predicate<NameSearchMember> filterByUserID) {
+        return group.members.stream()
+                .filter(filterByUserID)
+                .findAny();
+    }
+
     private NameSearchMember findUserInGroup(NameSearchGroup group, final Predicate<NameSearchMember> filterByUserID) {
         NameSearchMember user = group.members.stream()
                 .filter(filterByUserID)
@@ -284,7 +287,7 @@ public class MainVerticle extends AbstractVerticle {
         nsg.members.add(user);
         currentGroups.add(nsg);
         backup(nsg);
-        msg.reply(new JsonObject().put("update", "now"));
+        msg.reply(new JsonObject().put("update", "now").put("grp", nsg.id));
     }
 
     private void listGroups(Message<JsonObject> msg) {
@@ -431,5 +434,9 @@ public class MainVerticle extends AbstractVerticle {
             Logger.getLogger(MainVerticle.class.getName()).log(Level.SEVERE, null, ex);
             throw new RuntimeException(ex);
         }
+    }
+
+    public void log(String str) {
+        System.out.println(">> " + str);
     }
 }
