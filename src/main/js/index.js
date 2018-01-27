@@ -227,6 +227,7 @@ class User {
     bus.send('addMember', {usr: this.id, grp: this.group.id, email: email});
   }
   setUserName(name) {
+      if (name && name.length > 0)
     bus.send('setUserName', {usr: this.id, grp: this.group.id, name:name},(err,result)=>{
         // TODO check for duplicates here
     });
@@ -312,7 +313,7 @@ class GroupListView {
       vnode.attrs.onadd? m(ListGroupItem,
         m(InputWithEnter,{
           icon:'plus',
-          placeHolder: 'Create group',
+          placeHolder: 'Neue Gruppe zur Namenssuche starten',
           onenter:n=>vnode.attrs.onadd(n)
         })):null
     );
@@ -351,7 +352,7 @@ class TeamView {
         user.group.me.role === 'INITIATOR'? m(ListGroupItem,
           m(InputWithEnter,{
             icon:'envelope',
-            placeHolder: 'Add member or remind them to propose names',
+            placeHolder: 'Lade Freunde ein, oder erinnere sie daran, Vorschläge zu machen',
             onenter:n=>user.addMember(n)
           })):null
         )
@@ -435,7 +436,7 @@ class SignUp {
         m(Spacer,{style:'height:300px'}),
         m(InputWithEnter,{
         icon:'envelope',
-      placeHolder: 'Für das bootstrapping bitte Emailadresse eingeben',
+      placeHolder: 'Wenn dich niemand eingeladen hat, oder du deinen Link verloren hast, bitte deine Emailadresse eingeben.',
         onenter:email => this.sendMail(email)
       })]
     )
