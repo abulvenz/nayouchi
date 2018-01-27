@@ -323,7 +323,7 @@ class GroupListView {
 class TeamView {
   view(vnode){
     return [
-      m(SubHeading,m(Icon, {icon: 'bullhorn'}),' ','Der Vor-Schlägertrupp'),
+      m(SubHeading,m(Icon, {icon: 'bullhorn'}),' ','Der Vorschlägertrupp'),
       m(ListGroup,
         vnode.attrs.user.group.initiators.map(member => {
           return m(ListGroupItem,
@@ -352,7 +352,7 @@ class TeamView {
         user.group.me.role === 'INITIATOR'? m(ListGroupItem,
           m(InputWithEnter,{
             icon:'envelope',
-            placeHolder: 'Lade Freunde ein, oder erinnere sie daran, Vorschläge zu machen',
+            placeHolder: 'Lade Freunde ein, oder erinnere sie daran, Vorschläge zu machen.',
             onenter:n=>user.addMember(n)
           })):null
         )

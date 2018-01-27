@@ -24,6 +24,8 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
@@ -40,6 +42,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPoolConfig;
 
 public class MainVerticle extends AbstractVerticle {
 
@@ -50,9 +54,26 @@ public class MainVerticle extends AbstractVerticle {
     MailClient mailClient;
     MessageDigest encryptor;
     RedisClient redis;
-    Jedis jedis;
+    JedisPool jedisPool;
 
     JsonObject config;
+
+    // The assumption with this method is that it's been called when the application
+// is booting up so that a static pool has been created for all threads to use.
+// e.g. pool = getPool()
+//
+    public static JedisPool getPool() throws URISyntaxException {
+        URI redisURI = new URI(System.getenv("REDIS_URL"));
+        JedisPoolConfig poolConfig = new JedisPoolConfig();
+        poolConfig.setMaxTotal(10);
+        poolConfig.setMaxIdle(5);
+        poolConfig.setMinIdle(1);
+        poolConfig.setTestOnBorrow(true);
+        poolConfig.setTestOnReturn(true);
+        poolConfig.setTestWhileIdle(true);
+        JedisPool pool = new JedisPool(poolConfig, redisURI);
+        return pool;
+    }
 
     @Override
     public void start() {
@@ -359,9 +380,11 @@ public class MainVerticle extends AbstractVerticle {
     public boolean backupOrRemove(NameSearchGroup group) {
         if (group.members.stream().anyMatch(m -> m.role == Role.INITIATOR)) {
             System.out.println("io.vertx.starter.MainVerticle.backup(BACKUP)");
-            if (jedis != null) {
-                String json = Json.encode(group);
-                jedis.hset("groups", group.id, json);
+            if (jedisPool != null) {
+                try (Jedis jedis = jedisPool.getResource()) {
+                    String json = Json.encode(group);
+                    jedis.hset("groups", group.id, json);
+                }
             } else {
                 backupToFile(group);
             }
@@ -369,8 +392,10 @@ public class MainVerticle extends AbstractVerticle {
         } else {
             System.out.println("io.vertx.starter.MainVerticle.backup(REMOVE)");
             currentGroups.remove(group);
-            if (jedis != null) {
-                jedis.hdel("groups", group.id);
+            if (jedisPool != null) {
+                try (Jedis jedis = jedisPool.getResource()) {
+                    jedis.hdel("groups", group.id);
+                }
             } else {
 
             }
@@ -379,12 +404,15 @@ public class MainVerticle extends AbstractVerticle {
     }
 
     public void restore() {
-        if (jedis != null) {
-            Set<String> groups = jedis.hkeys("groups");
+        if (jedisPool != null) {
+            try (Jedis jedis = jedisPool.getResource()) {
 
-            currentGroups = groups.stream()
-                    .map(e -> Json.decodeValue(jedis.hget("groups", e), NameSearchGroup.class))
-                    .collect(Collectors.toList());
+                Set<String> groups = jedis.hkeys("groups");
+
+                currentGroups = groups.stream()
+                        .map(e -> Json.decodeValue(jedis.hget("groups", e), NameSearchGroup.class))
+                        .collect(Collectors.toList());
+            }
         } else {
             restoreFromFile();
         }
@@ -428,7 +456,11 @@ public class MainVerticle extends AbstractVerticle {
 
     private void setupAndRestore() {
         if (System.getenv("REDIS_URL") != null) {
-            jedis = new Jedis(System.getenv("REDIS_URL"));
+            try {
+                jedisPool = getPool();
+            } catch (Exception ex) {
+                Logger.getLogger(MainVerticle.class.getName()).log(Level.SEVERE, null, ex);
+            }
         }
 
         new File(databaseConfigFolder()).mkdirs();
