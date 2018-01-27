@@ -10,6 +10,9 @@ let connected = false;
 
 bus.onopen = () => {
   connected = true;
+  if (user){
+      user.leaveGroup();
+  }
   m.redraw();
 };
 

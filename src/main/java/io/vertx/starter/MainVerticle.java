@@ -50,6 +50,10 @@ public class MainVerticle extends AbstractVerticle {
 
     JsonObject config;
 
+    public void log(String str) {
+        System.out.println(">> " + str);
+    }
+
     @Override
     public void start() {
         readConfig();
@@ -191,10 +195,22 @@ public class MainVerticle extends AbstractVerticle {
         });
     }
 
-    private void updateUser(Message<JsonObject> msg, Consumer<NameSearchMember> todo) {
+    public void msgGroupAndUser(Message<JsonObject> msg, BiConsumer<NameSearchGroup, NameSearchMember> todo) {
+        msgGroupAndUserID(msg, (grpID, usrID) -> {
+            final NameSearchGroup group = findGroup(filterByGroupID(grpID));
+            todo.accept(group, findUserInGroup(group, filterByUserID(usrID)));
+        });
+    }
+
+    public void msgGroupAndUserID(Message<JsonObject> msg, BiConsumer<String, String> todo) {
         String usrID = msg.body().getString("usr");
         String grpID = msg.body().getString("grp");
-        updateUser(filterByGroupID(grpID), filterByUserID(usrID), todo);
+        todo.accept(grpID, usrID);
+    }
+
+    private void updateUser(Message<JsonObject> msg, Consumer<NameSearchMember> todo) {
+        msgGroupAndUserID(msg, (grpID, usrID)
+                -> updateUser(filterByGroupID(grpID), filterByUserID(usrID), todo));
     }
 
     private Predicate<NameSearchGroup> filterByGroupID(String grpID) {
@@ -213,7 +229,7 @@ public class MainVerticle extends AbstractVerticle {
 
         todo.accept(group, user);
         if (backup(group)) {
-            vertx.eventBus().publish("grp-" + group.id, new JsonObject().put("update", "now"));
+            sendUpdateSignalToUsers(group);
         }
     }
 
@@ -224,6 +240,10 @@ public class MainVerticle extends AbstractVerticle {
         todo.accept(user);
         backup(group);
 
+        sendUpdateSignalToUsers(group);
+    }
+
+    private void sendUpdateSignalToUsers(NameSearchGroup group) {
         vertx.eventBus().publish("grp-" + group.id, new JsonObject().put("update", "now"));
     }
 
@@ -282,10 +302,10 @@ public class MainVerticle extends AbstractVerticle {
 
     private void enterGroup(Message<JsonObject> msg) {
         System.out.println("io.vertx.starter.MainVerticle.enterGroup()" + msg.body().encode());
-        String userID = msg.body().getString("usr");
-        String grpID = msg.body().getString("grp");
+        msgGroupAndUserID(msg, (grpID, userID) -> {
+            msg.reply(findGroup(filterByGroupID(grpID)).toCurrent(userID));
 
-        msg.reply(findGroup(filterByGroupID(grpID)).toCurrent(userID));
+        });
     }
 
     private void setUserName(Message<JsonObject> msg) {
@@ -296,46 +316,36 @@ public class MainVerticle extends AbstractVerticle {
     }
 
     private void addMember(Message<JsonObject> msg) {
-        System.out.println("msg: " + msg.body().encode());
-
-        String usrID = msg.body().getString("usr");
-        String grpID = msg.body().getString("grp");
-
-        NameSearchGroup group = findGroup(filterByGroupID(grpID));
-        NameSearchMember user = findUserInGroup(group, filterByUserID(usrID));
-
-        if (user.role == Role.PROPOSER) {
-            return;
-        }
-
-        String email = msg.body().getString("email");
-        String secret = appSecret();
-        String id = encryption(secret + email);
-
-        String subject = "Signup";
-        String text = "Du wurdest eingeladen, einen Namen zu suchen in der Gruppe " + group.name + ". Um teilzunehmen, folge dem Link: ";
-        String confirmationlink = generalConfig().getString("appUrl") + "/usr/" + id;
-
-        MailMessage mailMessage = new MailMessage(invitationConfig().getString("fromAdress"), email, subject, text + confirmationlink);
-
-        mailClient.sendMail(mailMessage, (sendMail) -> {
-            if (sendMail.succeeded()) {
-                NameSearchMember newMember = new NameSearchMember();
-                newMember.id = id;
-                group.members.add(newMember);
-                backup(group);
-                msg.reply(new JsonObject().put("result", "success").encode());
-            } else {
-                msg.reply(new JsonObject().put("result", "error").put("error", sendMail.cause().getMessage()).encode());
+        msgGroupAndUser(msg, (group, user) -> {
+            if (user.role == Role.PROPOSER) {
+                return;
             }
-        });
 
+            String email = msg.body().getString("email");
+            String secret = appSecret();
+            String id = encryption(secret + email);
+
+            String subject = "Signup";
+            String text = "Du wurdest eingeladen, einen Namen zu suchen in der Gruppe " + group.name + ". Um teilzunehmen, folge dem Link: ";
+            String confirmationlink = generalConfig().getString("appUrl") + "/usr/" + id;
+
+            MailMessage mailMessage = new MailMessage(invitationConfig().getString("fromAdress"), email, subject, text + confirmationlink);
+
+            mailClient.sendMail(mailMessage, (sendMail) -> {
+                if (sendMail.succeeded()) {
+                    NameSearchMember newMember = new NameSearchMember();
+                    newMember.id = id;
+                    group.members.add(newMember);
+                    backup(group);
+                    msg.reply(new JsonObject().put("result", "success").encode());
+                } else {
+                    msg.reply(new JsonObject().put("result", "error").put("error", sendMail.cause().getMessage()).encode());
+                }
+            });
+        });
     }
 
     private void signup(Message<JsonObject> msg) {
-
-        System.out.println("msg: " + msg.body().encode());
-
         String email = msg.body().getString("email");
         String secret = appSecret();
         String id = encryption(secret + email);
