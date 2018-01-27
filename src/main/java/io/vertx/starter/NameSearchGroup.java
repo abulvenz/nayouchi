@@ -72,6 +72,7 @@ public class NameSearchGroup {
                 .map(e -> e.getKey())
                 .collect(Collectors.toList());
         Map<String, Integer> proposalsPerUser = members.stream()
+                .filter(member -> member.name != null && member.name.length() > 0)
                 .collect(Collectors.toMap(member -> member.name, member -> member.nominations.size()));
         JsonObject result = new JsonObject()
                 .put("name", name)
