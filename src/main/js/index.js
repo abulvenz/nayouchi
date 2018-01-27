@@ -21,6 +21,18 @@ bus.onclose = e => {
   m.redraw();
 };
 
+class Tooltip {
+    view(vnode){
+        return m('.tooltiptext',vnode.attrs,vnode.children);
+    }
+}
+
+class SomeThingWithTooltip {
+    view(vnode) {
+        return m('.mtooltip',vnode.attrs, vnode.children);
+    }    
+}
+
 class InputWithEnter {
   inputEvent(vnode) {
     return (e) => {
@@ -79,6 +91,12 @@ class WikiLink {
         '.wikipedia.org/wiki/' + vnode.attrs.link
     }, vnode.attrs.text ? vnode.attrs.text : vnode.attrs.link);
   }
+}
+
+class SubHeading {
+    view(vnode){
+        return m('h2',vnode.attrs,vnode.children);
+    }
 }
 
 class NameList {
@@ -235,7 +253,7 @@ class TeamView {
             ' ',
             member,
             ' ',
-            m(Icon,{icon:'certificate'}), 
+            m(SomeThingWithTooltip, m(Icon,{icon:'certificate'}),m(Tooltip,'Help')), 
             vnode.attrs.user.group.me.name === member? m('button.btn.btn-xs.pull-right',{onclick:e=>user.resign()},m(Icon,{icon:'chevron-right'})):null
             );
         }),
@@ -267,21 +285,21 @@ class TeamView {
 class NameListView {
   view(vnode){
     return [
-      m('h1',m('button.btn.btn-primary',{
+      m('h1',m(SomeThingWithTooltip, m('button.btn.btn-primary',{
         onclick:e => user.leaveGroup()
-      },m(Icon,{icon:'arrow-left'})), ' ' ,user.group.name),
-      m('h2', m(Icon,{icon:'heart'}),' ','Treffer von ', user.group.initiators.join(', ')),
+      },m(Icon,{icon:'arrow-left'})),m(Tooltip,'Zurück zur Gruppenübersicht')), ' ' ,user.group.name),
+      m(SubHeading, m(Icon,{icon:'heart'}),' ','Treffer von ', user.group.initiators.join(', ')),
        m(NameList,{
          names: user.group.duplicates
 //           actions: [{ glyph: 'ok', run: (name)=> (e) => console.log(name)}]
       }),
-      m('h2','Meine Vorschläge '/*,user.group.me.role === 'INITIATOR'?'Initiator':' Vorschläger'*/),
+      m(SubHeading,'Meine Vorschläge '/*,user.group.me.role === 'INITIATOR'?'Initiator':' Vorschläger'*/),
     m(NameList,{
       onadd: name => user.propose(name),
       names: user.group.me.nominations,
       actions: actions
     }),      user.group.proposersNominations.length>0?[
-     m('h2','Tipps von ', user.group.proposers.join(', ')),
+     m(SubHeading,'Tipps von ', user.group.proposers.join(', ')),
         m(NameList,{
           names: user.group.proposersNominations,
           actions: [{ glyph: 'ok', run: (name)=> (e) =>  user.propose(name)}]
