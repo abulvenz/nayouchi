@@ -329,7 +329,7 @@ class TeamView {
           return m(ListGroupItem,
             m(Icon,{icon:'user',style:'text-color:red'}),
             ' ',
-            member,
+            member,' ',m(SomeThingWithTooltip,'(', vnode.attrs.user.group.stats[member],')',m(Tooltip,'Anzahl der Vorschläge')),
             ' ',
             m(SomeThingWithTooltip, m(Icon,{icon:'certificate'}),m(Tooltip,'Dieser vielzackige Stern ist das Zeichen für die große Macht der Gruppenentscheider.')), 
             vnode.attrs.user.group.me.name === member? m('button.btn.btn-xs.pull-right',{onclick:e=>user.resign()},m(Icon,{icon:'chevron-right'})):null

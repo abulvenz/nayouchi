@@ -8,6 +8,7 @@ package io.vertx.starter;
 import io.vertx.core.json.JsonObject;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.xml.bind.annotation.XmlAccessType;
@@ -70,6 +71,8 @@ public class NameSearchGroup {
                 .filter(e -> e.getValue() > 1)
                 .map(e -> e.getKey())
                 .collect(Collectors.toList());
+        Map<String, Integer> proposalsPerUser = members.stream()
+                .collect(Collectors.toMap(member -> member.name, member -> member.nominations.size()));
         JsonObject result = new JsonObject()
                 .put("name", name)
                 .put("id", id)
@@ -77,6 +80,7 @@ public class NameSearchGroup {
                 .put("proposers", proposerNames)
                 .put("proposersNominations", others)
                 .put("initiators", initiatorNames)
+                .put("stats", proposalsPerUser)
                 .put("duplicates", duplicates);
         return result;
     }
