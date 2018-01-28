@@ -391,6 +391,12 @@ class InitiatorSign {
   }
 }
 
+class ProposalCounter {
+  view(vnode){
+    return m(SomeThingWithTooltip, '(', vnode.attrs.num, ')', m(Tooltip, 'Anzahl der Vorschläge'))
+  }
+}
+
 class TeamView {
   view(vnode) {
     return [
@@ -405,7 +411,7 @@ class TeamView {
               style: 'text-color:red'
             }),
             ' ',
-            member, ' ', m(SomeThingWithTooltip, '(', vnode.attrs.user.group.stats[member], ')', m(Tooltip, 'Anzahl der Vorschläge')),
+            member, ' ', m(ProposalCounter,{num:vnode.attrs.user.group.stats[member]}),
             ' ',
             m(InitiatorSign),
             vnode.attrs.user.group.me.name === member ? m('button.btn.btn-xs.pull-right', {
@@ -422,7 +428,7 @@ class TeamView {
               style: 'text-color:red'
             }),
             ' ',
-            member.length > 0 ? member : 'Anonymous der Große (bislang)',
+            member.length > 0 ? [member,' ',m(ProposalCounter,{num:vnode.attrs.user.group.stats[member]})] : 'Anonymous der Große (bislang)',
             ' ',
             user.group.me.role === 'INITIATOR' ? m('button.btn-xs.btn-default', {
               onclick: e => user.upgrade(member)
