@@ -57,9 +57,9 @@ public class MainVerticle extends AbstractVerticle {
     JsonObject config;
 
     // The assumption with this method is that it's been called when the application
-// is booting up so that a static pool has been created for all threads to use.
-// e.g. pool = getPool()
-//
+    // is booting up so that a static pool has been created for all threads to use.
+    // e.g. pool = getPool()
+    //
     public static JedisPool getPool() throws URISyntaxException {
         URI redisURI = new URI(System.getenv("REDIS_URL"));
         JedisPoolConfig poolConfig = new JedisPoolConfig();
