@@ -357,7 +357,7 @@ class GroupView {
         icon: 'star'
       }), ' ',
       grp.name,
-      ' ( ', grp.others.map(o => o.name).join(', '), ' ) ',
+      ' ( ', grp.others.filter(s => s.length > 0).map(o => o.name).join(', '), ' ) ',
       m('.badge', grp.me.nominations.length),
       m('.pull-right', m(Icon, {
         icon: 'arrow-right'

@@ -53,6 +53,7 @@ public class NameSearchGroup {
                 .filter(member -> member.role == Role.PROPOSER)
                 .flatMap(member -> member.nominations.stream())
                 .distinct()
+                .sorted()
                 .collect(Collectors.toList());
         List<String> proposerNames = members.stream()
                 .filter(member -> member.role == Role.PROPOSER)
